@@ -13,9 +13,6 @@ const Repairs = () => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     customerVehicle: '',
-    brand: '',
-    model: '',
-    plate: '',
     currentKm: '',
     currentIssues: '',
     description: '',
@@ -47,26 +44,10 @@ const Repairs = () => {
 
   const handleVehicleSelect = (vehicleId) => {
     setSelectedVehicle(vehicleId)
-    if (vehicleId) {
-      const vehicle = vehicles.find(v => v._id === vehicleId)
-      if (vehicle) {
-        setFormData({
-          ...formData,
-          customerVehicle: vehicleId,
-          brand: vehicle.brand,
-          model: vehicle.model,
-          plate: vehicle.plate
-        })
-      }
-    } else {
-      setFormData({
-        ...formData,
-        customerVehicle: '',
-        brand: '',
-        model: '',
-        plate: ''
-      })
-    }
+    setFormData({
+      ...formData,
+      customerVehicle: vehicleId
+    })
   }
 
   const handleSubmit = async (e) => {
@@ -121,9 +102,6 @@ const Repairs = () => {
       setFormData({
         date: repair.date.split('T')[0],
         customerVehicle: repair.customerVehicle?._id || '',
-        brand: repair.brand,
-        model: repair.model,
-        plate: repair.plate,
         currentKm: repair.currentKm || '',
         currentIssues: repair.currentIssues || '',
         description: repair.description,
@@ -140,9 +118,6 @@ const Repairs = () => {
       setFormData({
         date: new Date().toISOString().split('T')[0],
         customerVehicle: '',
-        brand: '',
-        model: '',
-        plate: '',
         currentKm: '',
         currentIssues: '',
         description: '',
@@ -198,38 +173,44 @@ const Repairs = () => {
           <table className="w-full">
             <thead>
               <tr className="bg-primary-black border-b border-border-color">
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Tarih</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Marka</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Model</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Plaka</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Açıklama</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">İşçilik</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Parça</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Toplam</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">İşlemler</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Tarih</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Müşteri</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Araç</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Plaka</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Açıklama</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">İşçilik</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Parça</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Toplam</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">İşlemler</th>
               </tr>
             </thead>
             <tbody>
               {repairs.map(repair => (
                 <tr key={repair._id} className="border-b border-border-color hover:bg-primary-black/50 transition-colors">
-                  <td className="px-4 py-3 text-sm text-primary-white">{new Date(repair.date).toLocaleDateString('tr-TR')}</td>
-                  <td className="px-4 py-3 text-sm text-primary-white">{repair.brand}</td>
-                  <td className="px-4 py-3 text-sm text-primary-white">{repair.model}</td>
-                  <td className="px-4 py-3 text-sm text-primary-white font-semibold">{repair.plate}</td>
-                  <td className="px-4 py-3 text-sm text-primary-white">{repair.description}</td>
-                  <td className="px-4 py-3 text-sm text-primary-white">{repair.laborCost.toFixed(2)} ₺</td>
-                  <td className="px-4 py-3 text-sm text-primary-white">{repair.partsCost.toFixed(2)} ₺</td>
-                  <td className="px-4 py-3 text-sm text-primary-red font-bold">{repair.totalCost.toFixed(2)} ₺</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-col sm:flex-row gap-2">
+                  <td className="px-3 py-2 text-xs text-primary-white">{new Date(repair.date).toLocaleDateString('tr-TR')}</td>
+                  <td className="px-3 py-2 text-xs text-primary-white">
+                    {repair.customerVehicle?.customerName || '-'}
+                  </td>
+                  <td className="px-3 py-2 text-xs text-primary-white">
+                    {repair.customerVehicle ? `${repair.customerVehicle.brand} ${repair.customerVehicle.model}` : `${repair.brand} ${repair.model}`}
+                  </td>
+                  <td className="px-3 py-2 text-xs text-primary-red font-bold">
+                    {repair.customerVehicle?.plate || repair.plate}
+                  </td>
+                  <td className="px-3 py-2 text-xs text-primary-white">{repair.description}</td>
+                  <td className="px-3 py-2 text-xs text-primary-white">{repair.laborCost.toFixed(2)} ₺</td>
+                  <td className="px-3 py-2 text-xs text-primary-white">{repair.partsCost.toFixed(2)} ₺</td>
+                  <td className="px-3 py-2 text-xs text-primary-red font-bold">{repair.totalCost.toFixed(2)} ₺</td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-col sm:flex-row gap-1.5">
                       <button 
-                        className="px-3 py-1.5 bg-border-color text-primary-white rounded-md text-sm transition-all btn-touch hover:bg-text-gray active:scale-95"
+                        className="px-2.5 py-1 bg-border-color text-primary-white rounded text-xs transition-all btn-touch hover:bg-text-gray active:scale-95"
                         onClick={() => openModal(repair)}
                       >
                         Düzenle
                       </button>
                       <button 
-                        className="px-3 py-1.5 bg-primary-red text-primary-white rounded-md text-sm transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
+                        className="px-2.5 py-1 bg-primary-red text-primary-white rounded text-xs transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
                         onClick={() => handleDelete(repair._id)}
                       >
                         Sil
@@ -240,7 +221,7 @@ const Repairs = () => {
               ))}
               {repairs.length === 0 && (
                 <tr>
-                  <td colSpan="9" className="px-4 py-8 text-center text-text-gray">
+                  <td colSpan="9" className="px-3 py-6 text-center text-text-gray text-xs">
                     Henüz kayıt yok
                   </td>
                 </tr>
@@ -279,55 +260,26 @@ const Repairs = () => {
 
               <div>
                 <label className="block mb-1.5 text-secondary-white font-medium text-xs">
-                  Müşteri Aracı Seç (Opsiyonel)
+                  Müşteri Aracı Seç <span className="text-primary-red">*</span>
                 </label>
                 <select
                   className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
                   value={selectedVehicle}
                   onChange={e => handleVehicleSelect(e.target.value)}
+                  required
                 >
-                  <option value="">Manuel Giriş</option>
+                  <option value="">Araç Seçiniz</option>
                   {vehicles.map(vehicle => (
                     <option key={vehicle._id} value={vehicle._id}>
                       {vehicle.plate} - {vehicle.brand} {vehicle.model} ({vehicle.customerName})
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block mb-1.5 text-secondary-white font-medium text-xs">Marka</label>
-                  <input
-                    type="text"
-                    className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
-                    value={formData.brand}
-                    onChange={e => setFormData({ ...formData, brand: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-1.5 text-secondary-white font-medium text-xs">Model</label>
-                  <input
-                    type="text"
-                    className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
-                    value={formData.model}
-                    onChange={e => setFormData({ ...formData, model: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block mb-1.5 text-secondary-white font-medium text-xs">Plaka</label>
-                <input
-                  type="text"
-                  className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red uppercase"
-                  value={formData.plate}
-                  onChange={e => setFormData({ ...formData, plate: e.target.value.toUpperCase() })}
-                  required
-                />
+                {vehicles.length === 0 && (
+                  <p className="text-xs text-text-gray mt-1">
+                    Henüz müşteri aracı yok. Önce "Müşteri Araçları" sayfasından araç ekleyin.
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
