@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const CustomerVehicles = () => {
   const { user } = useAuth()
@@ -119,6 +121,219 @@ const CustomerVehicles = () => {
   const closeHistoryModal = () => {
     setShowHistoryModal(false)
     setVehicleHistory(null)
+  }
+
+  const turkishToEnglish = (text) => {
+    if (!text) return text
+    const map = {
+      'ş': 's', 'Ş': 'S',
+      'ğ': 'g', 'Ğ': 'G',
+      'ç': 'c', 'Ç': 'C',
+      'ı': 'i', 'İ': 'I',
+      'ö': 'o', 'Ö': 'O',
+      'ü': 'u', 'Ü': 'U',
+      '₺': 'TL'
+    }
+    return text.toString().replace(/[şŞğĞçÇıİöÖüÜ₺]/g, char => map[char] || char)
+  }
+
+  const exportHistoryToPDF = () => {
+    if (!vehicleHistory) return
+
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    })
+
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+
+    // ============ HEADER ============
+    doc.setFillColor(220, 38, 38)
+    doc.rect(0, 0, pageWidth, 40, 'F')
+
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(24)
+    doc.setFont(undefined, 'bold')
+    doc.text(turkishToEnglish('SON DURAK'), pageWidth / 2, 15, { align: 'center' })
+
+    doc.setFontSize(11)
+    doc.setFont(undefined, 'normal')
+    doc.text(turkishToEnglish('Oto Elektrik & Tamir Servisi'), pageWidth / 2, 23, { align: 'center' })
+    doc.text(turkishToEnglish('Arac Tamir Gecmis Raporu'), pageWidth / 2, 30, { align: 'center' })
+
+    // ============ ARAÇ BİLGİLERİ ============
+    let yPos = 50
+    const { vehicle } = vehicleHistory
+
+    // Araç bilgi kutusu
+    doc.setFillColor(245, 245, 245)
+    doc.rect(14, yPos - 5, pageWidth - 28, 40, 'F')
+    doc.setDrawColor(220, 38, 38)
+    doc.setLineWidth(0.5)
+    doc.rect(14, yPos - 5, pageWidth - 28, 40, 'S')
+
+    doc.setTextColor(220, 38, 38)
+    doc.setFontSize(12)
+    doc.setFont(undefined, 'bold')
+    doc.text(turkishToEnglish('Arac Bilgileri'), 18, yPos)
+
+    doc.setTextColor(0, 0, 0)
+    doc.setFontSize(10)
+    doc.setFont(undefined, 'normal')
+    yPos += 7
+    doc.text(turkishToEnglish(`Plaka: ${vehicle.plate}`), 18, yPos)
+    yPos += 5
+    doc.text(turkishToEnglish(`Marka/Model: ${vehicle.brand} ${vehicle.model}`), 18, yPos)
+    yPos += 5
+    doc.text(turkishToEnglish(`Musteri: ${vehicle.customerName}`), 18, yPos)
+    yPos += 5
+    doc.text(turkishToEnglish(`Telefon: ${vehicle.customerPhone}`), 18, yPos)
+    yPos += 5
+    doc.text(turkishToEnglish(`Yil: ${vehicle.year || '-'}`), 18, yPos)
+
+    // ============ İSTATİSTİKLER ============
+    yPos += 12
+    doc.setFillColor(245, 245, 245)
+    doc.rect(14, yPos - 5, pageWidth - 28, 22, 'F')
+
+    doc.setFontSize(11)
+    doc.setFont(undefined, 'bold')
+    doc.setTextColor(220, 38, 38)
+    doc.text(turkishToEnglish('Ozet'), 18, yPos)
+
+    doc.setFontSize(9)
+    doc.setFont(undefined, 'normal')
+    doc.setTextColor(0, 0, 0)
+    yPos += 6
+    doc.text(turkishToEnglish(`Toplam Tamir Sayisi: ${vehicleHistory.totalRepairs}`), 18, yPos)
+    yPos += 5
+    doc.text(turkishToEnglish(`Toplam Harcama: ${vehicleHistory.totalCost.toFixed(2)} TL`), 18, yPos)
+    yPos += 5
+    doc.text(turkishToEnglish(`Toplam Parca: ${vehicleHistory.totalParts}`), 18, yPos)
+
+    // ============ TAMİR GEÇMİŞİ TABLOSU ============
+    yPos += 10
+
+    if (vehicleHistory.repairs.length > 0) {
+      doc.setFontSize(11)
+      doc.setFont(undefined, 'bold')
+      doc.setTextColor(220, 38, 38)
+      doc.text(turkishToEnglish('Tamir Gecmisi'), 18, yPos)
+      yPos += 5
+
+      const repairData = vehicleHistory.repairs.map((repair, index) => {
+        const partsStr = repair.parts.map(p => 
+          turkishToEnglish(`${p.part.name} (${p.quantity}x)`)
+        ).join(', ') || '-'
+
+        return [
+          (index + 1).toString(),
+          new Date(repair.date).toLocaleDateString('tr-TR'),
+          repair.currentKm ? repair.currentKm.toString() : '-',
+          turkishToEnglish(repair.description),
+          partsStr,
+          turkishToEnglish(`${repair.laborCost.toFixed(2)} TL`),
+          turkishToEnglish(`${repair.partsCost.toFixed(2)} TL`),
+          turkishToEnglish(`${repair.totalCost.toFixed(2)} TL`)
+        ]
+      })
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [[
+          turkishToEnglish('#'),
+          turkishToEnglish('Tarih'),
+          turkishToEnglish('KM'),
+          turkishToEnglish('Aciklama'),
+          turkishToEnglish('Parcalar'),
+          turkishToEnglish('Iscilik'),
+          turkishToEnglish('Parca'),
+          turkishToEnglish('Toplam')
+        ]],
+        body: repairData,
+        theme: 'grid',
+        styles: {
+          font: 'helvetica',
+          fontSize: 7,
+          cellPadding: 2,
+          textColor: [0, 0, 0],
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1
+        },
+        headStyles: {
+          fillColor: [220, 38, 38],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 8,
+          halign: 'center'
+        },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 8 },
+          1: { halign: 'center', cellWidth: 22 },
+          2: { halign: 'center', cellWidth: 15 },
+          3: { halign: 'left', cellWidth: 35 },
+          4: { halign: 'left', cellWidth: 40 },
+          5: { halign: 'right', cellWidth: 18 },
+          6: { halign: 'right', cellWidth: 18 },
+          7: { halign: 'right', cellWidth: 20 }
+        },
+        alternateRowStyles: {
+          fillColor: [250, 250, 250]
+        },
+        margin: { left: 14, right: 14 }
+      })
+
+      // Özet kutu - sağ alt
+      const finalY = doc.lastAutoTable.finalY + 10
+      const summaryX = pageWidth - 75
+      const summaryY = finalY
+      const summaryWidth = 60
+
+      doc.setFillColor(245, 245, 245)
+      doc.rect(summaryX, summaryY, summaryWidth, 20, 'F')
+      doc.setDrawColor(220, 38, 38)
+      doc.setLineWidth(0.5)
+      doc.rect(summaryX, summaryY, summaryWidth, 20, 'S')
+
+      doc.setFontSize(10)
+      doc.setFont(undefined, 'bold')
+      doc.setTextColor(220, 38, 38)
+      doc.text(turkishToEnglish('Genel Toplam'), summaryX + 30, summaryY + 6, { align: 'center' })
+
+      doc.setFontSize(9)
+      doc.setFont(undefined, 'normal')
+      doc.setTextColor(0, 0, 0)
+      doc.text(turkishToEnglish(`Tamir: ${vehicleHistory.totalRepairs}`), summaryX + 5, summaryY + 12)
+      
+      doc.setFont(undefined, 'bold')
+      doc.setTextColor(220, 38, 38)
+      doc.text(turkishToEnglish(`${vehicleHistory.totalCost.toFixed(2)} TL`), summaryX + summaryWidth - 5, summaryY + 16, { align: 'right' })
+    } else {
+      doc.setFontSize(10)
+      doc.setTextColor(100, 100, 100)
+      doc.text(turkishToEnglish('Bu arac icin henuz tamir kaydi bulunmamaktadir.'), pageWidth / 2, yPos, { align: 'center' })
+    }
+
+    // ============ FOOTER ============
+    doc.setTextColor(120, 120, 120)
+    doc.setFontSize(8)
+    doc.setFont(undefined, 'italic')
+    doc.text(
+      turkishToEnglish('Bu rapor Son Durak Oto Elektrik tarafindan otomatik olarak olusturulmustur.'),
+      pageWidth / 2,
+      pageHeight - 10,
+      { align: 'center' }
+    )
+
+    doc.setFont(undefined, 'normal')
+    const reportDate = new Date().toLocaleDateString('tr-TR')
+    doc.text(turkishToEnglish(`Tarih: ${reportDate}`), pageWidth - 14, pageHeight - 10, { align: 'right' })
+
+    // ============ KAYDET ============
+    const fileName = turkishToEnglish(`SonDurak_Arac_Gecmis_${vehicle.plate}_${new Date().toISOString().split('T')[0]}.pdf`)
+    doc.save(fileName)
   }
 
   const viewQRCode = async (vehicleId) => {
@@ -507,12 +722,20 @@ const CustomerVehicles = () => {
                   {vehicleHistory.vehicle.brand} {vehicleHistory.vehicle.model} - {vehicleHistory.vehicle.customerName}
                 </p>
               </div>
-              <button 
-                className="text-3xl text-text-gray hover:text-primary-red transition-colors"
-                onClick={closeHistoryModal}
-              >
-                &times;
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  className="px-3 py-1.5 bg-green-600 text-primary-white rounded text-xs font-medium transition-all btn-touch hover:bg-green-700 active:scale-95"
+                  onClick={exportHistoryToPDF}
+                >
+                  📄 PDF İndir
+                </button>
+                <button 
+                  className="text-3xl text-text-gray hover:text-primary-red transition-colors"
+                  onClick={closeHistoryModal}
+                >
+                  &times;
+                </button>
+              </div>
             </div>
 
             <div className="p-4">
