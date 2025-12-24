@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
+import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import './Pages.css'
 
 const Purchases = () => {
+  const { user } = useAuth()
   const [purchases, setPurchases] = useState([])
   const [suppliers, setSuppliers] = useState([])
   const [parts, setParts] = useState([])
