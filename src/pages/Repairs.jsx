@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
-import './Pages.css'
 
 const Repairs = () => {
   const [repairs, setRepairs] = useState([])
@@ -135,106 +134,126 @@ const Repairs = () => {
   }
 
   if (loading) {
-    return <div className="loading-container"><div className="spinner"></div></div>
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-12 h-12 border-4 border-border-color border-t-primary-red rounded-full animate-spin"></div>
+      </div>
+    )
   }
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h1>Tamir Edilen Araçlar</h1>
-        <button className="btn btn-primary" onClick={() => openModal()}>
+    <div className="p-4 md:p-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-secondary-white">Tamir Edilen Araçlar</h1>
+        <button 
+          className="w-full sm:w-auto px-4 py-3 md:py-2.5 bg-primary-red text-primary-white rounded-md font-medium transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
+          onClick={() => openModal()}
+        >
           + Yeni Tamir Kaydı
         </button>
       </div>
 
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Tarih</th>
-              <th>Marka</th>
-              <th>Model</th>
-              <th>Plaka</th>
-              <th>Açıklama</th>
-              <th>İşçilik</th>
-              <th>Parça</th>
-              <th>Toplam</th>
-              <th>İşlemler</th>
-            </tr>
-          </thead>
-          <tbody>
-            {repairs.map(repair => (
-              <tr key={repair._id}>
-                <td>{new Date(repair.date).toLocaleDateString('tr-TR')}</td>
-                <td>{repair.brand}</td>
-                <td>{repair.model}</td>
-                <td><strong>{repair.plate}</strong></td>
-                <td>{repair.description}</td>
-                <td>{repair.laborCost.toFixed(2)} ₺</td>
-                <td>{repair.partsCost.toFixed(2)} ₺</td>
-                <td className="text-red"><strong>{repair.totalCost.toFixed(2)} ₺</strong></td>
-                <td>
-                  <div className="action-buttons">
-                    <button className="btn btn-secondary" onClick={() => openModal(repair)}>
-                      Düzenle
-                    </button>
-                    <button className="btn btn-danger" onClick={() => handleDelete(repair._id)}>
-                      Sil
-                    </button>
-                  </div>
-                </td>
+      <div className="bg-secondary-black rounded-lg overflow-hidden border border-border-color">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-primary-black border-b border-border-color">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Tarih</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Marka</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Model</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Plaka</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Açıklama</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">İşçilik</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Parça</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Toplam</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">İşlemler</th>
               </tr>
-            ))}
-            {repairs.length === 0 && (
-              <tr>
-                <td colSpan="9" className="text-center text-gray">
-                  Henüz kayıt yok
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {repairs.map(repair => (
+                <tr key={repair._id} className="border-b border-border-color hover:bg-primary-black/50 transition-colors">
+                  <td className="px-4 py-3 text-sm text-primary-white">{new Date(repair.date).toLocaleDateString('tr-TR')}</td>
+                  <td className="px-4 py-3 text-sm text-primary-white">{repair.brand}</td>
+                  <td className="px-4 py-3 text-sm text-primary-white">{repair.model}</td>
+                  <td className="px-4 py-3 text-sm text-primary-white font-semibold">{repair.plate}</td>
+                  <td className="px-4 py-3 text-sm text-primary-white">{repair.description}</td>
+                  <td className="px-4 py-3 text-sm text-primary-white">{repair.laborCost.toFixed(2)} ₺</td>
+                  <td className="px-4 py-3 text-sm text-primary-white">{repair.partsCost.toFixed(2)} ₺</td>
+                  <td className="px-4 py-3 text-sm text-primary-red font-bold">{repair.totalCost.toFixed(2)} ₺</td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <button 
+                        className="px-3 py-1.5 bg-border-color text-primary-white rounded-md text-sm transition-all btn-touch hover:bg-text-gray active:scale-95"
+                        onClick={() => openModal(repair)}
+                      >
+                        Düzenle
+                      </button>
+                      <button 
+                        className="px-3 py-1.5 bg-primary-red text-primary-white rounded-md text-sm transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
+                        onClick={() => handleDelete(repair._id)}
+                      >
+                        Sil
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {repairs.length === 0 && (
+                <tr>
+                  <td colSpan="9" className="px-4 py-8 text-center text-text-gray">
+                    Henüz kayıt yok
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '800px'}}>
-            <div className="modal-header">
-              <h2 className="modal-title">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={closeModal}>
+          <div className="bg-secondary-black border border-border-color rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-6 border-b border-border-color sticky top-0 bg-secondary-black z-10">
+              <h2 className="text-xl font-bold text-secondary-white">
                 {editingId ? 'Tamir Düzenle' : 'Yeni Tamir'}
               </h2>
-              <button className="modal-close" onClick={closeModal}>&times;</button>
+              <button 
+                className="text-3xl text-text-gray hover:text-primary-red transition-colors"
+                onClick={closeModal}
+              >
+                &times;
+              </button>
             </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>Tarih</label>
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block mb-2 text-secondary-white font-medium text-sm">Tarih</label>
                 <input
                   type="date"
-                  className="form-control"
+                  className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
                   value={formData.date}
                   onChange={e => setFormData({ ...formData, date: e.target.value })}
                   required
                 />
               </div>
 
-              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
-                <div className="form-group">
-                  <label>Marka</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-2 text-secondary-white font-medium text-sm">Marka</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
                     value={formData.brand}
                     onChange={e => setFormData({ ...formData, brand: e.target.value })}
                     required
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Model</label>
+                <div>
+                  <label className="block mb-2 text-secondary-white font-medium text-sm">Model</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
                     value={formData.model}
                     onChange={e => setFormData({ ...formData, model: e.target.value })}
                     required
@@ -242,21 +261,21 @@ const Repairs = () => {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Plaka</label>
+              <div>
+                <label className="block mb-2 text-secondary-white font-medium text-sm">Plaka</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red uppercase"
                   value={formData.plate}
                   onChange={e => setFormData({ ...formData, plate: e.target.value.toUpperCase() })}
                   required
                 />
               </div>
 
-              <div className="form-group">
-                <label>Açıklama</label>
+              <div>
+                <label className="block mb-2 text-secondary-white font-medium text-sm">Açıklama</label>
                 <textarea
-                  className="form-control"
+                  className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red resize-none"
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
                   rows="3"
@@ -264,21 +283,21 @@ const Repairs = () => {
                 />
               </div>
 
-              <div className="form-group">
-                <label>Takılan Parçalar</label>
-                <div className="parts-list">
+              <div>
+                <label className="block mb-2 text-secondary-white font-medium text-sm">Takılan Parçalar</label>
+                <div className="space-y-2 mb-4">
                   {formData.parts.map((p, index) => {
                     const partData = parts.find(part => part._id === p.part)
                     return (
-                      <div key={index} className="part-item">
-                        <div className="part-info">
-                          <span>{partData?.name}</span>
-                          <span>{p.quantity} adet</span>
-                          <span>{(p.quantity * p.price).toFixed(2)} ₺</span>
+                      <div key={index} className="flex justify-between items-center p-3 bg-primary-black border border-border-color rounded-md">
+                        <div className="flex-1">
+                          <span className="text-primary-white">{partData?.name}</span>
+                          <span className="text-text-gray ml-4">{p.quantity} adet</span>
+                          <span className="text-primary-red ml-4 font-semibold">{(p.quantity * p.price).toFixed(2)} ₺</span>
                         </div>
                         <button
                           type="button"
-                          className="btn btn-danger"
+                          className="px-3 py-1.5 bg-primary-red text-primary-white rounded-md text-sm transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
                           onClick={() => removePart(index)}
                         >
                           Sil
@@ -288,22 +307,22 @@ const Repairs = () => {
                   })}
                 </div>
 
-                <div style={{display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '0.5rem', alignItems: 'end'}}>
-                  <div className="form-group" style={{position: 'relative'}}>
-                    <label>Parça</label>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                  <div className="relative md:col-span-2">
+                    <label className="block mb-2 text-secondary-white font-medium text-sm">Parça</label>
                     <input
                       type="text"
-                      className="form-control"
+                      className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
                       value={searchPart}
                       onChange={e => setSearchPart(e.target.value)}
                       placeholder="Parça ara..."
                     />
                     {searchPart && filteredParts.length > 0 && (
-                      <div className="autocomplete-list">
+                      <div className="absolute z-20 w-full mt-1 bg-primary-black border border-border-color rounded-md shadow-lg max-h-48 overflow-y-auto">
                         {filteredParts.slice(0, 5).map(part => (
                           <div
                             key={part._id}
-                            className="autocomplete-item"
+                            className="px-4 py-2 text-primary-white hover:bg-secondary-black cursor-pointer transition-colors"
                             onClick={() => {
                               setTempPart({ ...tempPart, part: part._id })
                               setSearchPart(part.name)
@@ -316,22 +335,22 @@ const Repairs = () => {
                     )}
                   </div>
 
-                  <div className="form-group">
-                    <label>Adet</label>
+                  <div>
+                    <label className="block mb-2 text-secondary-white font-medium text-sm">Adet</label>
                     <input
                       type="number"
-                      className="form-control"
+                      className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
                       value={tempPart.quantity}
                       onChange={e => setTempPart({ ...tempPart, quantity: parseInt(e.target.value) })}
                       min="1"
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label>Fiyat</label>
+                  <div>
+                    <label className="block mb-2 text-secondary-white font-medium text-sm">Fiyat</label>
                     <input
                       type="number"
-                      className="form-control"
+                      className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
                       value={tempPart.price}
                       onChange={e => setTempPart({ ...tempPart, price: parseFloat(e.target.value) })}
                       min="0"
@@ -339,17 +358,21 @@ const Repairs = () => {
                     />
                   </div>
 
-                  <button type="button" className="btn btn-secondary" onClick={addPart}>
+                  <button 
+                    type="button" 
+                    className="px-4 py-3 bg-border-color text-primary-white rounded-md font-medium transition-all btn-touch hover:bg-text-gray active:scale-95"
+                    onClick={addPart}
+                  >
                     Ekle
                   </button>
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>İşçilik Ücreti (₺)</label>
+              <div>
+                <label className="block mb-2 text-secondary-white font-medium text-sm">İşçilik Ücreti (₺)</label>
                 <input
                   type="number"
-                  className="form-control"
+                  className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
                   value={formData.laborCost}
                   onChange={e => setFormData({ ...formData, laborCost: parseFloat(e.target.value) })}
                   min="0"
@@ -358,42 +381,48 @@ const Repairs = () => {
                 />
               </div>
 
-              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem'}}>
-                <div className="form-group">
-                  <label>Parça Toplam</label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block mb-2 text-secondary-white font-medium text-sm">Parça Toplam</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white font-semibold opacity-75 cursor-not-allowed"
                     value={`${getTotalPartsCost().toFixed(2)} ₺`}
                     disabled
                   />
                 </div>
-                <div className="form-group">
-                  <label>İşçilik</label>
+                <div>
+                  <label className="block mb-2 text-secondary-white font-medium text-sm">İşçilik</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white font-semibold opacity-75 cursor-not-allowed"
                     value={`${parseFloat(formData.laborCost || 0).toFixed(2)} ₺`}
                     disabled
                   />
                 </div>
-                <div className="form-group">
-                  <label>Genel Toplam</label>
+                <div>
+                  <label className="block mb-2 text-secondary-white font-medium text-sm">Genel Toplam</label>
                   <input
                     type="text"
-                    className="form-control"
-                    style={{fontWeight: 'bold', color: 'var(--primary-red)'}}
+                    className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-red font-bold opacity-75 cursor-not-allowed"
                     value={`${getTotalCost().toFixed(2)} ₺`}
                     disabled
                   />
                 </div>
               </div>
 
-              <div className="flex gap-1">
-                <button type="submit" className="btn btn-primary">
+              <div className="flex gap-2 pt-4">
+                <button 
+                  type="submit" 
+                  className="flex-1 px-4 py-3 bg-primary-red text-primary-white rounded-md font-medium transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
+                >
                   {editingId ? 'Güncelle' : 'Kaydet'}
                 </button>
-                <button type="button" className="btn btn-secondary" onClick={closeModal}>
+                <button 
+                  type="button" 
+                  className="flex-1 px-4 py-3 bg-border-color text-primary-white rounded-md font-medium transition-all btn-touch hover:bg-text-gray active:scale-95"
+                  onClick={closeModal}
+                >
                   İptal
                 </button>
               </div>
@@ -406,4 +435,3 @@ const Repairs = () => {
 }
 
 export default Repairs
-

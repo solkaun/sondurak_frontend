@@ -8,7 +8,6 @@ import Purchases from './pages/Purchases'
 import Repairs from './pages/Repairs'
 import Expenses from './pages/Expenses'
 import Analysis from './pages/Analysis'
-import './App.css'
 
 function App() {
   const { user } = useAuth()
