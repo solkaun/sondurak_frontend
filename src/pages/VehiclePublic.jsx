@@ -14,7 +14,7 @@ const VehiclePublic = () => {
 
   const fetchVehicleData = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/customer-vehicles/public/${qrCode}`)
+      const response = await axios.get(`${import.meta.env.VITE_API_URL || 'https://sondurak-backend.vercel.app'}/api/customer-vehicles/public/${qrCode}`)
       setData(response.data)
     } catch (err) {
       setError(err.response?.data?.message || 'Araç bulunamadı')
