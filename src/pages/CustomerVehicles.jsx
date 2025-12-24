@@ -6,6 +6,8 @@ const CustomerVehicles = () => {
   const { user } = useAuth()
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [loadingHistory, setLoadingHistory] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showHistoryModal, setShowHistoryModal] = useState(false)
   const [vehicleHistory, setVehicleHistory] = useState(null)
@@ -37,6 +39,7 @@ const CustomerVehicles = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setSubmitting(true)
     try {
       if (editingId) {
         await api.put(`/customer-vehicles/${editingId}`, formData)
@@ -47,16 +50,21 @@ const CustomerVehicles = () => {
       closeModal()
     } catch (error) {
       alert(error.response?.data?.message || 'Bir hata oluştu')
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const handleDelete = async (id) => {
     if (!confirm('Bu aracı silmek istediğinize emin misiniz?')) return
+    setSubmitting(true)
     try {
       await api.delete(`/customer-vehicles/${id}`)
       fetchVehicles()
     } catch (error) {
       alert(error.response?.data?.message || 'Silme hatası')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -93,12 +101,15 @@ const CustomerVehicles = () => {
   }
 
   const viewHistory = async (vehicleId) => {
+    setLoadingHistory(true)
     try {
       const response = await api.get(`/customer-vehicles/${vehicleId}/history`)
       setVehicleHistory(response.data)
       setShowHistoryModal(true)
     } catch (error) {
       alert(error.response?.data?.message || 'Geçmiş yüklenemedi')
+    } finally {
+      setLoadingHistory(false)
     }
   }
 
@@ -151,21 +162,30 @@ const CustomerVehicles = () => {
                   <td className="px-3 py-2">
                     <div className="flex flex-col sm:flex-row gap-1.5">
                       <button 
-                        className="px-2.5 py-1 bg-green-600 text-primary-white rounded text-xs transition-all btn-touch hover:bg-green-700 active:scale-95"
+                        className="px-2.5 py-1 bg-green-600 text-primary-white rounded text-xs transition-all btn-touch hover:bg-green-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={() => viewHistory(vehicle._id)}
+                        disabled={loadingHistory || submitting}
                       >
-                        Geçmiş
+                        {loadingHistory ? (
+                          <span className="flex items-center justify-center gap-1">
+                            <span className="inline-block w-3 h-3 border-2 border-green-300 border-t-white rounded-full animate-spin"></span>
+                          </span>
+                        ) : (
+                          'Geçmiş'
+                        )}
                       </button>
                       <button 
-                        className="px-2.5 py-1 bg-border-color text-primary-white rounded text-xs transition-all btn-touch hover:bg-text-gray active:scale-95"
+                        className="px-2.5 py-1 bg-border-color text-primary-white rounded text-xs transition-all btn-touch hover:bg-text-gray active:scale-95 disabled:opacity-50"
                         onClick={() => openModal(vehicle)}
+                        disabled={submitting}
                       >
                         {user?.role === 'admin' ? 'Düzenle' : 'Detay'}
                       </button>
                       {user?.role === 'admin' && (
                         <button 
-                          className="px-2.5 py-1 bg-primary-red text-primary-white rounded text-xs transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
+                          className="px-2.5 py-1 bg-primary-red text-primary-white rounded text-xs transition-all btn-touch hover:bg-primary-red-hover active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => handleDelete(vehicle._id)}
+                          disabled={submitting}
                         >
                           Sil
                         </button>
@@ -298,14 +318,23 @@ const CustomerVehicles = () => {
                 <div className="flex gap-2 pt-2">
                   <button 
                     type="submit" 
-                    className="flex-1 px-4 py-2 bg-primary-red text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
+                    className="flex-1 px-4 py-2 bg-primary-red text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-primary-red-hover active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={submitting}
                   >
-                    {editingId ? 'Güncelle' : 'Kaydet'}
+                    {submitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="inline-block w-4 h-4 border-2 border-border-color border-t-primary-white rounded-full animate-spin"></span>
+                        <span>{editingId ? 'Güncelleniyor...' : 'Kaydediliyor...'}</span>
+                      </span>
+                    ) : (
+                      editingId ? 'Güncelle' : 'Kaydet'
+                    )}
                   </button>
                   <button 
                     type="button" 
-                    className="flex-1 px-4 py-2 bg-border-color text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-text-gray active:scale-95"
+                    className="flex-1 px-4 py-2 bg-border-color text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-text-gray active:scale-95 disabled:opacity-50"
                     onClick={closeModal}
+                    disabled={submitting}
                   >
                     İptal
                   </button>

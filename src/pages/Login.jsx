@@ -74,11 +74,14 @@ const Login = () => {
 
           <button 
             type="submit" 
-            className="w-full flex items-center justify-center gap-2 p-2.5 md:p-2.5 bg-primary-red text-primary-white rounded-md cursor-pointer text-sm font-medium transition-all btn-touch hover:bg-primary-red-hover hover:-translate-y-0.5 active:bg-primary-red-hover active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 p-2.5 md:p-2.5 bg-primary-red text-primary-white rounded-md cursor-pointer text-sm font-medium transition-all btn-touch hover:bg-primary-red-hover hover:-translate-y-0.5 active:bg-primary-red-hover active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             disabled={loading}
           >
             {loading ? (
-              <span className="inline-block w-5 h-5 border-3 border-border-color border-t-primary-red rounded-full animate-spin"></span>
+              <>
+                <span className="inline-block w-4 h-4 border-2 border-border-color border-t-primary-white rounded-full animate-spin"></span>
+                <span>Giriş yapılıyor...</span>
+              </>
             ) : (
               'Giriş Yap'
             )}
