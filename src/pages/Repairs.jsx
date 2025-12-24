@@ -82,7 +82,9 @@ const Repairs = () => {
     }
   }
 
-  const handlePaymentToggle = async (id) => {
+  const handlePaymentReceived = async (id) => {
+    if (!confirm('Ödeme alındı olarak işaretlenecek. Bu işlem geri alınamaz!')) return
+    
     setSubmitting(true)
     try {
       await api.patch(`/repairs/${id}/payment`)
@@ -234,18 +236,27 @@ const Repairs = () => {
                   <td className="px-3 py-2 text-xs text-primary-white">{repair.partsCost.toFixed(2)} ₺</td>
                   <td className="px-3 py-2 text-xs text-primary-red font-bold">{repair.totalCost.toFixed(2)} ₺</td>
                   <td className="px-3 py-2 text-xs">
-                    <button
-                      className={`px-2.5 py-1 rounded text-xs transition-all btn-touch active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-semibold ${
-                        repair.isPaid 
-                          ? 'bg-green-600 text-primary-white hover:bg-green-700' 
-                          : 'bg-yellow-600 text-primary-white hover:bg-yellow-700'
-                      }`}
-                      onClick={() => handlePaymentToggle(repair._id)}
-                      disabled={submitting}
-                      title={repair.isPaid ? 'Ödeme Alındı' : 'Ödeme Alınmadı'}
-                    >
-                      {repair.isPaid ? '✓ Alındı' : '⏳ Bekliyor'}
-                    </button>
+                    {repair.isPaid ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-2.5 py-1 bg-green-600 text-primary-white rounded text-xs font-semibold">
+                          ✓ Alındı
+                        </span>
+                        {repair.paidAt && (
+                          <span className="text-text-gray text-xs">
+                            {new Date(repair.paidAt).toLocaleDateString('tr-TR')}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        className="px-2.5 py-1 bg-yellow-600 text-primary-white rounded text-xs transition-all btn-touch hover:bg-yellow-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+                        onClick={() => handlePaymentReceived(repair._id)}
+                        disabled={submitting}
+                        title="Ödeme Alındı olarak işaretle"
+                      >
+                        💰 Tahsil Et
+                      </button>
+                    )}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-col sm:flex-row gap-1.5">
