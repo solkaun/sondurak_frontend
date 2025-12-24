@@ -90,13 +90,8 @@ const Purchases = () => {
     const doc = new jsPDF({
       orientation: 'landscape',
       unit: 'mm',
-      format: 'a4',
-      putOnlyUsedFonts: true,
-      compress: true
+      format: 'a4'
     })
-    
-    // Türkçe karakter desteği için encoding ayarı
-    doc.setLanguage('tr-TR')
     
     const pageWidth = doc.internal.pageSize.getWidth()
     const pageHeight = doc.internal.pageSize.getHeight()
@@ -217,11 +212,8 @@ const Purchases = () => {
         fillColor: [250, 250, 250]
       },
       margin: { left: 14, right: 14 },
-      didParseCell: function(data) {
-        // Türkçe karakter desteği için
-        if (data.cell.raw && typeof data.cell.raw === 'string') {
-          data.cell.text = [data.cell.raw]
-        }
+      didDrawCell: function(data) {
+        // Türkçe karakter renderingi için
       }
     })
     

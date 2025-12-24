@@ -82,6 +82,18 @@ const Repairs = () => {
     }
   }
 
+  const handlePaymentToggle = async (id) => {
+    setSubmitting(true)
+    try {
+      await api.patch(`/repairs/${id}/payment`)
+      fetchData()
+    } catch (error) {
+      alert(error.response?.data?.message || 'Ödeme durumu güncellenemedi')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const handlePartSelect = (partId) => {
     const selectedPart = parts.find(p => p._id === partId)
     if (selectedPart) {
@@ -200,6 +212,7 @@ const Repairs = () => {
                 <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">İşçilik</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Parça</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Toplam</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Ödeme</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">İşlemler</th>
               </tr>
             </thead>
@@ -220,6 +233,20 @@ const Repairs = () => {
                   <td className="px-3 py-2 text-xs text-primary-white">{repair.laborCost.toFixed(2)} ₺</td>
                   <td className="px-3 py-2 text-xs text-primary-white">{repair.partsCost.toFixed(2)} ₺</td>
                   <td className="px-3 py-2 text-xs text-primary-red font-bold">{repair.totalCost.toFixed(2)} ₺</td>
+                  <td className="px-3 py-2 text-xs">
+                    <button
+                      className={`px-2.5 py-1 rounded text-xs transition-all btn-touch active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-semibold ${
+                        repair.isPaid 
+                          ? 'bg-green-600 text-primary-white hover:bg-green-700' 
+                          : 'bg-yellow-600 text-primary-white hover:bg-yellow-700'
+                      }`}
+                      onClick={() => handlePaymentToggle(repair._id)}
+                      disabled={submitting}
+                      title={repair.isPaid ? 'Ödeme Alındı' : 'Ödeme Alınmadı'}
+                    >
+                      {repair.isPaid ? '✓ Alındı' : '⏳ Bekliyor'}
+                    </button>
+                  </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-col sm:flex-row gap-1.5">
                       <button 
@@ -242,7 +269,7 @@ const Repairs = () => {
               ))}
               {repairs.length === 0 && (
                 <tr>
-                  <td colSpan="9" className="px-3 py-6 text-center text-text-gray text-xs">
+                  <td colSpan="10" className="px-3 py-6 text-center text-text-gray text-xs">
                     Henüz kayıt yok
                   </td>
                 </tr>
