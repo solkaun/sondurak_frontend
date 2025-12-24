@@ -303,7 +303,7 @@ const CustomerVehicles = () => {
       doc.setFontSize(9)
       doc.setFont(undefined, 'normal')
       doc.setTextColor(0, 0, 0)
-      doc.text(turkishToEnglish(`Tamir: ${vehicleHistory.totalRepairs}`), summaryX + 5, summaryY + 12)
+      doc.text(turkishToEnglish(`Toplam Tamir Sayısı: ${vehicleHistory.totalRepairs}`), summaryX + 5, summaryY + 12)
       
       doc.setFont(undefined, 'bold')
       doc.setTextColor(220, 38, 38)
