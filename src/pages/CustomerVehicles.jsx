@@ -110,6 +110,7 @@ const CustomerVehicles = () => {
     try {
       const response = await api.get(`/customer-vehicles/${vehicleId}/history`)
       setVehicleHistory(response.data)
+      console.log(response.data)
       setShowHistoryModal(true)
     } catch (error) {
       alert(error.response?.data?.message || 'Geçmiş yüklenemedi')
