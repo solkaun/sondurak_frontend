@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
-import jsPDF from 'jspdf'
-import 'jspdf-autotable'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const Purchases = () => {
   const { user } = useAuth()
@@ -91,7 +91,7 @@ const Purchases = () => {
     
     // Başlık
     doc.setFontSize(16)
-    doc.text('SON DURAK - Parça Satın Alım Listesi', 14, 15)
+    doc.text('SON DURAK - Parca Satin Alim Listesi', 14, 15)
     
     // Filtre bilgileri
     doc.setFontSize(10)
@@ -100,16 +100,16 @@ const Purchases = () => {
       doc.text('Filtreler:', 14, yPos)
       yPos += 5
       if (startDate) {
-        doc.text(`Başlangıç: ${new Date(startDate).toLocaleDateString('tr-TR')}`, 14, yPos)
+        doc.text(`Baslangic: ${new Date(startDate).toLocaleDateString('tr-TR')}`, 14, yPos)
         yPos += 5
       }
       if (endDate) {
-        doc.text(`Bitiş: ${new Date(endDate).toLocaleDateString('tr-TR')}`, 14, yPos)
+        doc.text(`Bitis: ${new Date(endDate).toLocaleDateString('tr-TR')}`, 14, yPos)
         yPos += 5
       }
       if (selectedSupplier) {
         const supplier = suppliers.find(s => s._id === selectedSupplier)
-        doc.text(`Parçacı: ${supplier?.shopName || ''}`, 14, yPos)
+        doc.text(`Parcaci: ${supplier?.shopName || ''}`, 14, yPos)
         yPos += 5
       }
       yPos += 5
@@ -121,15 +121,15 @@ const Purchases = () => {
       purchase.supplier.shopName,
       purchase.part.name,
       purchase.quantity,
-      `${purchase.price.toFixed(2)} ₺`,
-      `${purchase.totalCost.toFixed(2)} ₺`,
+      `${purchase.price.toFixed(2)} TL`,
+      `${purchase.totalCost.toFixed(2)} TL`,
       purchase.createdBy ? `${purchase.createdBy.firstName} ${purchase.createdBy.lastName}` : '-'
     ])
     
     // Tablo
-    doc.autoTable({
+    autoTable(doc, {
       startY: yPos,
-      head: [['Tarih', 'Parçacı', 'Parça', 'Adet', 'Fiyat', 'Toplam', 'Ekleyen']],
+      head: [['Tarih', 'Parcaci', 'Parca', 'Adet', 'Fiyat', 'Toplam', 'Ekleyen']],
       body: tableData,
       styles: { fontSize: 8 },
       headStyles: { fillColor: [220, 38, 38] }
@@ -139,8 +139,8 @@ const Purchases = () => {
     const totalCost = purchases.reduce((sum, p) => sum + p.totalCost, 0)
     const finalY = doc.lastAutoTable.finalY + 10
     doc.setFontSize(10)
-    doc.text(`Toplam Kayıt: ${pagination.totalItems}`, 14, finalY)
-    doc.text(`Toplam Tutar: ${totalCost.toFixed(2)} ₺`, 14, finalY + 5)
+    doc.text(`Toplam Kayit: ${pagination.totalItems}`, 14, finalY)
+    doc.text(`Toplam Tutar: ${totalCost.toFixed(2)} TL`, 14, finalY + 5)
     
     // PDF'i indir
     const fileName = `Parca_Satin_Alim_${new Date().toISOString().split('T')[0]}.pdf`
