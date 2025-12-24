@@ -86,6 +86,20 @@ const Purchases = () => {
     setTimeout(() => fetchData(), 100)
   }
 
+  const turkishToEnglish = (text) => {
+    if (!text) return text
+    const map = {
+      'ş': 's', 'Ş': 'S',
+      'ğ': 'g', 'Ğ': 'G',
+      'ç': 'c', 'Ç': 'C',
+      'ı': 'i', 'İ': 'I',
+      'ö': 'o', 'Ö': 'O',
+      'ü': 'u', 'Ü': 'U',
+      '₺': 'TL'
+    }
+    return text.toString().replace(/[şŞğĞçÇıİöÖüÜ₺]/g, char => map[char] || char)
+  }
+
   const exportToPDF = () => {
     const doc = new jsPDF({
       orientation: 'landscape',
@@ -96,9 +110,6 @@ const Purchases = () => {
     const pageWidth = doc.internal.pageSize.getWidth()
     const pageHeight = doc.internal.pageSize.getHeight()
     
-    // Türkçe karakter desteği için Times fontu kullan
-    doc.setFont('times', 'normal')
-    
     // ============ HEADER ============
     // Kırmızı header bar
     doc.setFillColor(220, 38, 38) // primary-red
@@ -107,20 +118,20 @@ const Purchases = () => {
     // Şirket adı (beyaz, bold)
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(24)
-    doc.setFont('times', 'bold')
-    doc.text('SON DURAK', pageWidth / 2, 15, { align: 'center' })
+    doc.setFont(undefined, 'bold')
+    doc.text(turkishToEnglish('SON DURAK'), pageWidth / 2, 15, { align: 'center' })
     
     // Alt başlık
     doc.setFontSize(11)
-    doc.setFont('times', 'normal')
-    doc.text('Oto Elektrik & Tamir Servisi', pageWidth / 2, 22, { align: 'center' })
-    doc.text('Parça Satın Alım Raporu', pageWidth / 2, 28, { align: 'center' })
+    doc.setFont(undefined, 'normal')
+    doc.text(turkishToEnglish('Oto Elektrik & Tamir Servisi'), pageWidth / 2, 22, { align: 'center' })
+    doc.text(turkishToEnglish('Parca Satin Alim Raporu'), pageWidth / 2, 28, { align: 'center' })
     
     // ============ RAPOR BİLGİLERİ ============
     let yPos = 45
     doc.setTextColor(0, 0, 0)
     doc.setFontSize(9)
-    doc.setFont('times', 'normal')
+    doc.setFont(undefined, 'normal')
     
     // Rapor tarihi (sağ üst)
     const reportDate = new Date().toLocaleString('tr-TR', {
@@ -130,7 +141,7 @@ const Purchases = () => {
       hour: '2-digit',
       minute: '2-digit'
     })
-    doc.text(`Rapor Tarihi: ${reportDate}`, pageWidth - 14, yPos, { align: 'right' })
+    doc.text(turkishToEnglish(`Rapor Tarihi: ${reportDate}`), pageWidth - 14, yPos, { align: 'right' })
     yPos += 6
     
     // ============ FİLTRELER ============
@@ -139,25 +150,25 @@ const Purchases = () => {
       doc.rect(14, yPos - 4, pageWidth - 28, 18, 'F')
       
       doc.setFontSize(10)
-      doc.setFont('times', 'bold')
+      doc.setFont(undefined, 'bold')
       doc.setTextColor(220, 38, 38)
-      doc.text('Uygulanan Filtreler:', 18, yPos)
+      doc.text(turkishToEnglish('Uygulanan Filtreler:'), 18, yPos)
       
-      doc.setFont('times', 'normal')
+      doc.setFont(undefined, 'normal')
       doc.setTextColor(0, 0, 0)
       doc.setFontSize(9)
       yPos += 6
       
       let filterText = []
       if (startDate) {
-        filterText.push(`Başlangıç: ${new Date(startDate).toLocaleDateString('tr-TR')}`)
+        filterText.push(turkishToEnglish(`Baslangic: ${new Date(startDate).toLocaleDateString('tr-TR')}`))
       }
       if (endDate) {
-        filterText.push(`Bitiş: ${new Date(endDate).toLocaleDateString('tr-TR')}`)
+        filterText.push(turkishToEnglish(`Bitis: ${new Date(endDate).toLocaleDateString('tr-TR')}`))
       }
       if (selectedSupplier) {
         const supplier = suppliers.find(s => s._id === selectedSupplier)
-        filterText.push(`Parçacı: ${supplier?.shopName || '-'}`)
+        filterText.push(turkishToEnglish(`Parcaci: ${supplier?.shopName || '-'}`))
       }
       
       doc.text(filterText.join('  •  '), 18, yPos)
@@ -170,23 +181,23 @@ const Purchases = () => {
     const tableData = purchases.map((purchase, index) => [
       (index + 1).toString(),
       new Date(purchase.date).toLocaleDateString('tr-TR'),
-      purchase.supplier.shopName || '-',
-      purchase.part.name || '-',
+      turkishToEnglish(purchase.supplier.shopName || '-'),
+      turkishToEnglish(purchase.part.name || '-'),
       purchase.quantity.toString(),
-      `${purchase.price.toFixed(2)} ₺`,
-      `${purchase.totalCost.toFixed(2)} ₺`,
-      purchase.createdBy 
+      turkishToEnglish(`${purchase.price.toFixed(2)} TL`),
+      turkishToEnglish(`${purchase.totalCost.toFixed(2)} TL`),
+      turkishToEnglish(purchase.createdBy 
         ? `${purchase.createdBy.firstName} ${purchase.createdBy.lastName}` 
-        : '-'
+        : '-')
     ])
     
     autoTable(doc, {
       startY: yPos,
-      head: [['#', 'Tarih', 'Parçacı', 'Parça Adı', 'Adet', 'Birim Fiyat', 'Toplam', 'Ekleyen']],
+      head: [[turkishToEnglish('#'), turkishToEnglish('Tarih'), turkishToEnglish('Parcaci'), turkishToEnglish('Parca Adi'), turkishToEnglish('Adet'), turkishToEnglish('Birim Fiyat'), turkishToEnglish('Toplam'), turkishToEnglish('Ekleyen')]],
       body: tableData,
       theme: 'grid',
       styles: {
-        font: 'times',
+        font: 'helvetica',
         fontSize: 8,
         cellPadding: 3,
         textColor: [0, 0, 0],
@@ -197,7 +208,6 @@ const Purchases = () => {
       headStyles: {
         fillColor: [220, 38, 38],
         textColor: [255, 255, 255],
-        font: 'times',
         fontStyle: 'bold',
         fontSize: 9,
         halign: 'center'
@@ -215,7 +225,10 @@ const Purchases = () => {
       alternateRowStyles: {
         fillColor: [250, 250, 250]
       },
-      margin: { left: 14, right: 14 }
+      margin: { left: 14, right: 14 },
+      didDrawCell: function(data) {
+        // Türkçe karakter renderingi için
+      }
     })
     
     // ============ ÖZET TABLOSU ============
@@ -237,43 +250,43 @@ const Purchases = () => {
     
     // Özet başlık
     doc.setFontSize(11)
-    doc.setFont('times', 'bold')
+    doc.setFont(undefined, 'bold')
     doc.setTextColor(220, 38, 38)
-    doc.text('Rapor Özeti', summaryX + 32.5, summaryY + 6, { align: 'center' })
+    doc.text(turkishToEnglish('Rapor Ozeti'), summaryX + 32.5, summaryY + 6, { align: 'center' })
     
     // Özet değerleri
     doc.setFontSize(9)
-    doc.setFont('times', 'normal')
+    doc.setFont(undefined, 'normal')
     doc.setTextColor(0, 0, 0)
-    doc.text(`Toplam Kayıt:`, summaryX + 5, summaryY + 12)
-    doc.setFont('times', 'bold')
+    doc.text(turkishToEnglish(`Toplam Kayit:`), summaryX + 5, summaryY + 12)
+    doc.setFont(undefined, 'bold')
     doc.text(`${pagination.totalItems}`, summaryX + summaryWidth - 5, summaryY + 12, { align: 'right' })
     
-    doc.setFont('times', 'normal')
-    doc.text(`Toplam Adet:`, summaryX + 5, summaryY + 17)
-    doc.setFont('times', 'bold')
+    doc.setFont(undefined, 'normal')
+    doc.text(turkishToEnglish(`Toplam Adet:`), summaryX + 5, summaryY + 17)
+    doc.setFont(undefined, 'bold')
     doc.text(`${totalQuantity}`, summaryX + summaryWidth - 5, summaryY + 17, { align: 'right' })
     
-    doc.setFont('times', 'normal')
-    doc.text(`Toplam Tutar:`, summaryX + 5, summaryY + 22)
-    doc.setFont('times', 'bold')
+    doc.setFont(undefined, 'normal')
+    doc.text(turkishToEnglish(`Toplam Tutar:`), summaryX + 5, summaryY + 22)
+    doc.setFont(undefined, 'bold')
     doc.setTextColor(220, 38, 38)
-    doc.text(`${totalCost.toFixed(2)} ₺`, summaryX + summaryWidth - 5, summaryY + 22, { align: 'right' })
+    doc.text(turkishToEnglish(`${totalCost.toFixed(2)} TL`), summaryX + summaryWidth - 5, summaryY + 22, { align: 'right' })
     
     // ============ FOOTER ============
     doc.setTextColor(120, 120, 120)
     doc.setFontSize(8)
-    doc.setFont('times', 'italic')
+    doc.setFont(undefined, 'italic')
     doc.text(
-      'Bu rapor Son Durak Oto Elektrik tarafından otomatik olarak oluşturulmuştur.',
+      turkishToEnglish('Bu rapor Son Durak Oto Elektrik tarafindan otomatik olarak olusturulmustur.'),
       pageWidth / 2,
       pageHeight - 10,
       { align: 'center' }
     )
     
     // Sayfa numarası
-    doc.setFont('times', 'normal')
-    doc.text(`Sayfa 1`, pageWidth - 14, pageHeight - 10, { align: 'right' })
+    doc.setFont(undefined, 'normal')
+    doc.text(turkishToEnglish(`Sayfa 1`), pageWidth - 14, pageHeight - 10, { align: 'right' })
     
     // ============ KAYDET ============
     const fileName = `SonDurak_Parca_Raporu_${new Date().toISOString().split('T')[0]}.pdf`
