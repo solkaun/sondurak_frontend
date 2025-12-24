@@ -87,63 +87,191 @@ const Purchases = () => {
   }
 
   const exportToPDF = () => {
-    const doc = new jsPDF()
+    const doc = new jsPDF({
+      orientation: 'landscape', // Yatay sayfa - daha geniş tablo için
+      unit: 'mm',
+      format: 'a4'
+    })
     
-    // Başlık
-    doc.setFontSize(16)
-    doc.text('SON DURAK - Parca Satin Alim Listesi', 14, 15)
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
     
-    // Filtre bilgileri
-    doc.setFontSize(10)
-    let yPos = 25
+    // ============ HEADER ============
+    // Kırmızı header bar
+    doc.setFillColor(220, 38, 38) // primary-red
+    doc.rect(0, 0, pageWidth, 35, 'F')
+    
+    // Şirket adı (beyaz, bold)
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(24)
+    doc.setFont(undefined, 'bold')
+    doc.text('SON DURAK', pageWidth / 2, 15, { align: 'center' })
+    
+    // Alt başlık
+    doc.setFontSize(11)
+    doc.setFont(undefined, 'normal')
+    doc.text('Oto Elektrik & Tamir Servisi', pageWidth / 2, 22, { align: 'center' })
+    doc.text('Parça Satın Alım Raporu', pageWidth / 2, 28, { align: 'center' })
+    
+    // ============ RAPOR BİLGİLERİ ============
+    let yPos = 45
+    doc.setTextColor(0, 0, 0)
+    doc.setFontSize(9)
+    doc.setFont(undefined, 'normal')
+    
+    // Rapor tarihi (sağ üst)
+    const reportDate = new Date().toLocaleString('tr-TR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+    doc.text(`Rapor Tarihi: ${reportDate}`, pageWidth - 14, yPos, { align: 'right' })
+    yPos += 6
+    
+    // ============ FİLTRELER ============
     if (startDate || endDate || selectedSupplier) {
-      doc.text('Filtreler:', 14, yPos)
-      yPos += 5
+      doc.setFillColor(245, 245, 245) // Açık gri arka plan
+      doc.rect(14, yPos - 4, pageWidth - 28, 18, 'F')
+      
+      doc.setFontSize(10)
+      doc.setFont(undefined, 'bold')
+      doc.setTextColor(220, 38, 38)
+      doc.text('Uygulanan Filtreler:', 18, yPos)
+      
+      doc.setFont(undefined, 'normal')
+      doc.setTextColor(0, 0, 0)
+      doc.setFontSize(9)
+      yPos += 6
+      
+      let filterText = []
       if (startDate) {
-        doc.text(`Baslangic: ${new Date(startDate).toLocaleDateString('tr-TR')}`, 14, yPos)
-        yPos += 5
+        filterText.push(`Başlangıç: ${new Date(startDate).toLocaleDateString('tr-TR')}`)
       }
       if (endDate) {
-        doc.text(`Bitis: ${new Date(endDate).toLocaleDateString('tr-TR')}`, 14, yPos)
-        yPos += 5
+        filterText.push(`Bitiş: ${new Date(endDate).toLocaleDateString('tr-TR')}`)
       }
       if (selectedSupplier) {
         const supplier = suppliers.find(s => s._id === selectedSupplier)
-        doc.text(`Parcaci: ${supplier?.shopName || ''}`, 14, yPos)
-        yPos += 5
+        filterText.push(`Parçacı: ${supplier?.shopName || '-'}`)
       }
+      
+      doc.text(filterText.join('  •  '), 18, yPos)
+      yPos += 10
+    } else {
       yPos += 5
     }
     
-    // Tablo verisi
-    const tableData = purchases.map(purchase => [
+    // ============ TABLO ============
+    const tableData = purchases.map((purchase, index) => [
+      (index + 1).toString(),
       new Date(purchase.date).toLocaleDateString('tr-TR'),
-      purchase.supplier.shopName,
-      purchase.part.name,
-      purchase.quantity,
-      `${purchase.price.toFixed(2)} TL`,
-      `${purchase.totalCost.toFixed(2)} TL`,
-      purchase.createdBy ? `${purchase.createdBy.firstName} ${purchase.createdBy.lastName}` : '-'
+      purchase.supplier.shopName || '-',
+      purchase.part.name || '-',
+      purchase.quantity.toString(),
+      `${purchase.price.toFixed(2)} ₺`,
+      `${purchase.totalCost.toFixed(2)} ₺`,
+      purchase.createdBy 
+        ? `${purchase.createdBy.firstName} ${purchase.createdBy.lastName}` 
+        : '-'
     ])
     
-    // Tablo
     autoTable(doc, {
       startY: yPos,
-      head: [['Tarih', 'Parcaci', 'Parca', 'Adet', 'Fiyat', 'Toplam', 'Ekleyen']],
+      head: [['#', 'Tarih', 'Parçacı', 'Parça Adı', 'Adet', 'Birim Fiyat', 'Toplam', 'Ekleyen']],
       body: tableData,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [220, 38, 38] }
+      theme: 'grid',
+      styles: {
+        font: 'helvetica',
+        fontSize: 8,
+        cellPadding: 3,
+        textColor: [0, 0, 0],
+        lineColor: [200, 200, 200],
+        lineWidth: 0.1
+      },
+      headStyles: {
+        fillColor: [220, 38, 38], // Kırmızı
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 9,
+        halign: 'center'
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 10 }, // #
+        1: { halign: 'center', cellWidth: 25 }, // Tarih
+        2: { halign: 'left', cellWidth: 40 },   // Parçacı
+        3: { halign: 'left', cellWidth: 50 },   // Parça
+        4: { halign: 'center', cellWidth: 15 }, // Adet
+        5: { halign: 'right', cellWidth: 25 },  // Birim Fiyat
+        6: { halign: 'right', cellWidth: 25 },  // Toplam
+        7: { halign: 'left', cellWidth: 35 }    // Ekleyen
+      },
+      alternateRowStyles: {
+        fillColor: [250, 250, 250] // Zebra stripes
+      },
+      margin: { left: 14, right: 14 }
     })
     
-    // Özet
-    const totalCost = purchases.reduce((sum, p) => sum + p.totalCost, 0)
+    // ============ ÖZET TABLOSU ============
     const finalY = doc.lastAutoTable.finalY + 10
-    doc.setFontSize(10)
-    doc.text(`Toplam Kayit: ${pagination.totalItems}`, 14, finalY)
-    doc.text(`Toplam Tutar: ${totalCost.toFixed(2)} TL`, 14, finalY + 5)
+    const totalCost = purchases.reduce((sum, p) => sum + p.totalCost, 0)
+    const totalQuantity = purchases.reduce((sum, p) => sum + p.quantity, 0)
     
-    // PDF'i indir
-    const fileName = `Parca_Satin_Alim_${new Date().toISOString().split('T')[0]}.pdf`
+    // Özet kutusu
+    const summaryX = pageWidth - 80
+    const summaryY = finalY
+    const summaryWidth = 65
+    
+    // Kutu çerçevesi
+    doc.setFillColor(245, 245, 245)
+    doc.rect(summaryX, summaryY, summaryWidth, 25, 'F')
+    doc.setDrawColor(220, 38, 38)
+    doc.setLineWidth(0.5)
+    doc.rect(summaryX, summaryY, summaryWidth, 25, 'S')
+    
+    // Özet başlık
+    doc.setFontSize(11)
+    doc.setFont(undefined, 'bold')
+    doc.setTextColor(220, 38, 38)
+    doc.text('Rapor Özeti', summaryX + 32.5, summaryY + 6, { align: 'center' })
+    
+    // Özet değerleri
+    doc.setFontSize(9)
+    doc.setFont(undefined, 'normal')
+    doc.setTextColor(0, 0, 0)
+    doc.text(`Toplam Kayıt:`, summaryX + 5, summaryY + 12)
+    doc.setFont(undefined, 'bold')
+    doc.text(`${pagination.totalItems}`, summaryX + summaryWidth - 5, summaryY + 12, { align: 'right' })
+    
+    doc.setFont(undefined, 'normal')
+    doc.text(`Toplam Adet:`, summaryX + 5, summaryY + 17)
+    doc.setFont(undefined, 'bold')
+    doc.text(`${totalQuantity}`, summaryX + summaryWidth - 5, summaryY + 17, { align: 'right' })
+    
+    doc.setFont(undefined, 'normal')
+    doc.text(`Toplam Tutar:`, summaryX + 5, summaryY + 22)
+    doc.setFont(undefined, 'bold')
+    doc.setTextColor(220, 38, 38)
+    doc.text(`${totalCost.toFixed(2)} ₺`, summaryX + summaryWidth - 5, summaryY + 22, { align: 'right' })
+    
+    // ============ FOOTER ============
+    doc.setTextColor(120, 120, 120)
+    doc.setFontSize(8)
+    doc.setFont(undefined, 'italic')
+    doc.text(
+      'Bu rapor Son Durak Oto Elektrik tarafından otomatik olarak oluşturulmuştur.',
+      pageWidth / 2,
+      pageHeight - 10,
+      { align: 'center' }
+    )
+    
+    // Sayfa numarası
+    doc.setFont(undefined, 'normal')
+    doc.text(`Sayfa 1`, pageWidth - 14, pageHeight - 10, { align: 'right' })
+    
+    // ============ KAYDET ============
+    const fileName = `SonDurak_Parca_Raporu_${new Date().toISOString().split('T')[0]}.pdf`
     doc.save(fileName)
   }
 
