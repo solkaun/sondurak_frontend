@@ -15,7 +15,7 @@ const Layout = () => {
       </main>
 
       {/* Mobile: Bottom Navigation, Desktop: Left Sidebar */}
-      <nav className="w-full bg-secondary-black border-t border-border-color flex flex-row fixed bottom-0 left-0 z-[100] overflow-x-auto lg:w-[280px] lg:border-t-0 lg:border-r lg:flex-col lg:fixed lg:h-screen lg:bottom-auto lg:top-0">
+      <nav className="w-full bg-secondary-black border-t border-border-color flex flex-row fixed bottom-0 left-0 z-[10] overflow-x-auto lg:w-[280px] lg:border-t-0 lg:border-r lg:flex-col lg:fixed lg:h-screen lg:bottom-auto lg:top-0">
         {/* Desktop Sidebar Header */}
         <div className="hidden lg:block p-8 pt-8 pb-6 border-b border-border-color bg-gradient-to-br from-primary-black to-secondary-black">
           <h1 className="text-2xl font-extrabold text-primary-red mb-1 tracking-[2px]">SON DURAK</h1>
@@ -34,7 +34,7 @@ const Layout = () => {
             `}
           >
             <span>📦</span>
-            <span>Satın Alım</span>
+            <span>Parça Satın Alımı</span>
           </NavLink>
           <NavLink 
             to="/parts" 
@@ -71,7 +71,7 @@ const Layout = () => {
                 `}
               >
                 <span>🔧</span>
-                <span>Tamir</span>
+                <span>Araç Tamiri</span>
               </NavLink>
               <NavLink 
                 to="/expenses"
