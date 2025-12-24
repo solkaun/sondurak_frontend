@@ -96,6 +96,9 @@ const Purchases = () => {
     const pageWidth = doc.internal.pageSize.getWidth()
     const pageHeight = doc.internal.pageSize.getHeight()
     
+    // Türkçe karakter desteği için Times fontu kullan
+    doc.setFont('times', 'normal')
+    
     // ============ HEADER ============
     // Kırmızı header bar
     doc.setFillColor(220, 38, 38) // primary-red
@@ -104,12 +107,12 @@ const Purchases = () => {
     // Şirket adı (beyaz, bold)
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(24)
-    doc.setFont(undefined, 'bold')
+    doc.setFont('times', 'bold')
     doc.text('SON DURAK', pageWidth / 2, 15, { align: 'center' })
     
     // Alt başlık
     doc.setFontSize(11)
-    doc.setFont(undefined, 'normal')
+    doc.setFont('times', 'normal')
     doc.text('Oto Elektrik & Tamir Servisi', pageWidth / 2, 22, { align: 'center' })
     doc.text('Parça Satın Alım Raporu', pageWidth / 2, 28, { align: 'center' })
     
@@ -117,7 +120,7 @@ const Purchases = () => {
     let yPos = 45
     doc.setTextColor(0, 0, 0)
     doc.setFontSize(9)
-    doc.setFont(undefined, 'normal')
+    doc.setFont('times', 'normal')
     
     // Rapor tarihi (sağ üst)
     const reportDate = new Date().toLocaleString('tr-TR', {
@@ -136,11 +139,11 @@ const Purchases = () => {
       doc.rect(14, yPos - 4, pageWidth - 28, 18, 'F')
       
       doc.setFontSize(10)
-      doc.setFont(undefined, 'bold')
+      doc.setFont('times', 'bold')
       doc.setTextColor(220, 38, 38)
       doc.text('Uygulanan Filtreler:', 18, yPos)
       
-      doc.setFont(undefined, 'normal')
+      doc.setFont('times', 'normal')
       doc.setTextColor(0, 0, 0)
       doc.setFontSize(9)
       yPos += 6
@@ -183,7 +186,7 @@ const Purchases = () => {
       body: tableData,
       theme: 'grid',
       styles: {
-        font: 'helvetica',
+        font: 'times',
         fontSize: 8,
         cellPadding: 3,
         textColor: [0, 0, 0],
@@ -194,6 +197,7 @@ const Purchases = () => {
       headStyles: {
         fillColor: [220, 38, 38],
         textColor: [255, 255, 255],
+        font: 'times',
         fontStyle: 'bold',
         fontSize: 9,
         halign: 'center'
@@ -211,10 +215,7 @@ const Purchases = () => {
       alternateRowStyles: {
         fillColor: [250, 250, 250]
       },
-      margin: { left: 14, right: 14 },
-      didDrawCell: function(data) {
-        // Türkçe karakter renderingi için
-      }
+      margin: { left: 14, right: 14 }
     })
     
     // ============ ÖZET TABLOSU ============
@@ -236,33 +237,33 @@ const Purchases = () => {
     
     // Özet başlık
     doc.setFontSize(11)
-    doc.setFont(undefined, 'bold')
+    doc.setFont('times', 'bold')
     doc.setTextColor(220, 38, 38)
     doc.text('Rapor Özeti', summaryX + 32.5, summaryY + 6, { align: 'center' })
     
     // Özet değerleri
     doc.setFontSize(9)
-    doc.setFont(undefined, 'normal')
+    doc.setFont('times', 'normal')
     doc.setTextColor(0, 0, 0)
     doc.text(`Toplam Kayıt:`, summaryX + 5, summaryY + 12)
-    doc.setFont(undefined, 'bold')
+    doc.setFont('times', 'bold')
     doc.text(`${pagination.totalItems}`, summaryX + summaryWidth - 5, summaryY + 12, { align: 'right' })
     
-    doc.setFont(undefined, 'normal')
+    doc.setFont('times', 'normal')
     doc.text(`Toplam Adet:`, summaryX + 5, summaryY + 17)
-    doc.setFont(undefined, 'bold')
+    doc.setFont('times', 'bold')
     doc.text(`${totalQuantity}`, summaryX + summaryWidth - 5, summaryY + 17, { align: 'right' })
     
-    doc.setFont(undefined, 'normal')
+    doc.setFont('times', 'normal')
     doc.text(`Toplam Tutar:`, summaryX + 5, summaryY + 22)
-    doc.setFont(undefined, 'bold')
+    doc.setFont('times', 'bold')
     doc.setTextColor(220, 38, 38)
     doc.text(`${totalCost.toFixed(2)} ₺`, summaryX + summaryWidth - 5, summaryY + 22, { align: 'right' })
     
     // ============ FOOTER ============
     doc.setTextColor(120, 120, 120)
     doc.setFontSize(8)
-    doc.setFont(undefined, 'italic')
+    doc.setFont('times', 'italic')
     doc.text(
       'Bu rapor Son Durak Oto Elektrik tarafından otomatik olarak oluşturulmuştur.',
       pageWidth / 2,
@@ -271,7 +272,7 @@ const Purchases = () => {
     )
     
     // Sayfa numarası
-    doc.setFont(undefined, 'normal')
+    doc.setFont('times', 'normal')
     doc.text(`Sayfa 1`, pageWidth - 14, pageHeight - 10, { align: 'right' })
     
     // ============ KAYDET ============
