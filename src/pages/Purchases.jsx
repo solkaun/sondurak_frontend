@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
-import { useAuth } from '../context/AuthContext'
 import './Pages.css'
 
 const Purchases = () => {
-  const { user } = useAuth()
   const [purchases, setPurchases] = useState([])
   const [suppliers, setSuppliers] = useState([])
   const [parts, setParts] = useState([])
@@ -12,7 +10,6 @@ const Purchases = () => {
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [searchPart, setSearchPart] = useState('')
-  const [error, setError] = useState('')
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     supplier: '',
@@ -26,28 +23,17 @@ const Purchases = () => {
   }, [])
 
   const fetchData = async () => {
-    setLoading(true)
-    setError('')
     try {
-      console.log('Fetching data... User role:', user?.role)
-      
       const [purchasesRes, suppliersRes, partsRes] = await Promise.all([
         api.get('/purchases'),
         api.get('/suppliers'),
         api.get('/parts')
       ])
-      
-      console.log('Purchases:', purchasesRes.data.length)
-      console.log('Suppliers:', suppliersRes.data.length)
-      console.log('Parts:', partsRes.data.length)
-      
       setPurchases(purchasesRes.data)
       setSuppliers(suppliersRes.data)
       setParts(partsRes.data)
     } catch (error) {
       console.error('Veri yükleme hatası:', error)
-      console.error('Error response:', error.response?.data)
-      setError(error.response?.data?.message || 'Veriler yüklenirken hata oluştu')
     } finally {
       setLoading(false)
     }
@@ -55,7 +41,6 @@ const Purchases = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('')
     try {
       if (editingId) {
         await api.put(`/purchases/${editingId}`, formData)
@@ -106,7 +91,6 @@ const Purchases = () => {
     setShowModal(false)
     setEditingId(null)
     setSearchPart('')
-    setError('')
   }
 
   const filteredParts = parts.filter(part =>
@@ -126,12 +110,6 @@ const Purchases = () => {
         </button>
       </div>
 
-      {error && (
-        <div className="alert alert-error">
-          {error}
-        </div>
-      )}
-
       <div className="table-container">
         <table>
           <thead>
@@ -142,6 +120,7 @@ const Purchases = () => {
               <th>Adet</th>
               <th>Birim Fiyat</th>
               <th>Toplam</th>
+              <th>Ekleyen</th>
               <th>İşlemler</th>
             </tr>
           </thead>
@@ -154,6 +133,12 @@ const Purchases = () => {
                 <td>{purchase.quantity}</td>
                 <td>{purchase.price.toFixed(2)} ₺</td>
                 <td className="text-red">{purchase.totalCost.toFixed(2)} ₺</td>
+                <td>
+                  {purchase.createdBy ? 
+                    `${purchase.createdBy.firstName} ${purchase.createdBy.lastName}` : 
+                    '-'
+                  }
+                </td>
                 <td>
                   <div className="action-buttons">
                     <button className="btn btn-secondary" onClick={() => openModal(purchase)}>
@@ -168,7 +153,7 @@ const Purchases = () => {
             ))}
             {purchases.length === 0 && (
               <tr>
-                <td colSpan="7" className="text-center text-gray">
+                <td colSpan="8" className="text-center text-gray">
                   Henüz kayıt yok
                 </td>
               </tr>
@@ -186,18 +171,6 @@ const Purchases = () => {
               </h2>
               <button className="modal-close" onClick={closeModal}>&times;</button>
             </div>
-
-            {error && (
-              <div className="alert alert-error">
-                {error}
-              </div>
-            )}
-
-            {suppliers.length === 0 && (
-              <div className="alert alert-error">
-                ⚠️ Parçacı bulunamadı. Lütfen admin ile iletişime geçin.
-              </div>
-            )}
 
             <form onSubmit={handleSubmit}>
               <div className="form-group">
@@ -218,7 +191,6 @@ const Purchases = () => {
                   value={formData.supplier}
                   onChange={e => setFormData({ ...formData, supplier: e.target.value })}
                   required
-                  disabled={suppliers.length === 0}
                 >
                   <option value="">Parçacı Seçin</option>
                   {suppliers.map(supplier => (
@@ -227,9 +199,6 @@ const Purchases = () => {
                     </option>
                   ))}
                 </select>
-                {suppliers.length === 0 && (
-                  <small className="text-gray">Henüz parçacı eklenmemiş</small>
-                )}
               </div>
 
               <div className="form-group">
@@ -299,11 +268,7 @@ const Purchases = () => {
               </div>
 
               <div className="flex gap-1">
-                <button 
-                  type="submit" 
-                  className="btn btn-primary"
-                  disabled={suppliers.length === 0}
-                >
+                <button type="submit" className="btn btn-primary">
                   {editingId ? 'Güncelle' : 'Kaydet'}
                 </button>
                 <button type="button" className="btn btn-secondary" onClick={closeModal}>
@@ -319,3 +284,4 @@ const Purchases = () => {
 }
 
 export default Purchases
+
