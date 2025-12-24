@@ -75,6 +75,18 @@ const Repairs = () => {
     }
   }
 
+  const handlePartSelect = (partId) => {
+    const selectedPart = parts.find(p => p._id === partId)
+    if (selectedPart) {
+      setTempPart({ 
+        ...tempPart, 
+        part: partId,
+        price: selectedPart.lastPrice || 0
+      })
+      setSearchPart(selectedPart.name)
+    }
+  }
+
   const addPart = () => {
     if (!tempPart.part) {
       alert('Parça seçiniz')
@@ -349,10 +361,10 @@ const Repairs = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                   <div className="relative md:col-span-2">
-                    <label className="block mb-2 text-secondary-white font-medium text-sm">Parça</label>
+                    <label className="block mb-1.5 text-secondary-white font-medium text-xs">Parça</label>
                     <input
                       type="text"
-                      className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
+                      className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
                       value={searchPart}
                       onChange={e => setSearchPart(e.target.value)}
                       placeholder="Parça ara..."
@@ -362,13 +374,15 @@ const Repairs = () => {
                         {filteredParts.slice(0, 5).map(part => (
                           <div
                             key={part._id}
-                            className="px-4 py-2 text-primary-white hover:bg-secondary-black cursor-pointer transition-colors"
-                            onClick={() => {
-                              setTempPart({ ...tempPart, part: part._id })
-                              setSearchPart(part.name)
-                            }}
+                            className="px-3 py-2 text-primary-white text-sm hover:bg-secondary-black cursor-pointer transition-colors"
+                            onClick={() => handlePartSelect(part._id)}
                           >
-                            {part.name}
+                            <div className="flex justify-between items-center">
+                              <span>{part.name}</span>
+                              {part.lastPrice > 0 && (
+                                <span className="text-xs text-primary-red">{part.lastPrice.toFixed(2)} ₺</span>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -376,10 +390,10 @@ const Repairs = () => {
                   </div>
 
                   <div>
-                    <label className="block mb-2 text-secondary-white font-medium text-sm">Adet</label>
+                    <label className="block mb-1.5 text-secondary-white font-medium text-xs">Adet</label>
                     <input
                       type="number"
-                      className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
+                      className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
                       value={tempPart.quantity}
                       onChange={e => setTempPart({ ...tempPart, quantity: parseInt(e.target.value) })}
                       min="1"
@@ -387,20 +401,23 @@ const Repairs = () => {
                   </div>
 
                   <div>
-                    <label className="block mb-2 text-secondary-white font-medium text-sm">Fiyat</label>
+                    <label className="block mb-1.5 text-secondary-white font-medium text-xs">
+                      Fiyat <span className="text-text-gray">(Son alım)</span>
+                    </label>
                     <input
                       type="number"
-                      className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
+                      className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
                       value={tempPart.price}
                       onChange={e => setTempPart({ ...tempPart, price: parseFloat(e.target.value) })}
                       min="0"
                       step="0.01"
+                      placeholder="0.00"
                     />
                   </div>
 
                   <button 
                     type="button" 
-                    className="px-4 py-3 bg-border-color text-primary-white rounded-md font-medium transition-all btn-touch hover:bg-text-gray active:scale-95"
+                    className="px-4 py-2 bg-border-color text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-text-gray active:scale-95 h-fit self-end"
                     onClick={addPart}
                   >
                     Ekle
