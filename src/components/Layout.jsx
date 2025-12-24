@@ -7,6 +7,13 @@ const Layout = () => {
 
   return (
     <div className="layout">
+      <main className="main-content">
+        <div className="mobile-header">
+          <h1 className="mobile-logo">SON DURAK</h1>
+        </div>
+        <Outlet />
+      </main>
+
       <nav className="sidebar">
         <div className="sidebar-header">
           <h1 className="logo">SON DURAK</h1>
@@ -17,22 +24,28 @@ const Layout = () => {
           {user?.role === 'admin' && (
             <>
               <NavLink to="/purchases" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                📦 Parça Satın Alımları
+                <span>📦</span>
+                <span>Satın Alım</span>
               </NavLink>
               <NavLink to="/repairs" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                🔧 Tamir Edilen Araçlar
+                <span>🔧</span>
+                <span>Tamir</span>
               </NavLink>
               <NavLink to="/expenses" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                💰 Dükkan Giderleri
+                <span>💰</span>
+                <span>Giderler</span>
               </NavLink>
               <NavLink to="/suppliers" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                🏪 Parçacılar
+                <span>🏪</span>
+                <span>Parçacılar</span>
               </NavLink>
               <NavLink to="/users" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                👥 Kullanıcılar
+                <span>👥</span>
+                <span>Kullanıcılar</span>
               </NavLink>
               <NavLink to="/analysis" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                📊 Analiz
+                <span>📊</span>
+                <span>Analiz</span>
               </NavLink>
             </>
           )}
@@ -44,14 +57,11 @@ const Layout = () => {
             <p className="user-role">{user?.role === 'admin' ? 'Admin' : 'Kullanıcı'}</p>
           </div>
           <button onClick={logout} className="btn btn-danger btn-block">
-            Çıkış Yap
+            <span>🚪</span>
+            <span>Çıkış</span>
           </button>
         </div>
       </nav>
-
-      <main className="main-content">
-        <Outlet />
-      </main>
     </div>
   )
 }
