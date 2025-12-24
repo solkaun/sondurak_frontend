@@ -36,6 +36,28 @@ const Layout = () => {
             <span>📦</span>
             <span>Satın Alım</span>
           </NavLink>
+          <NavLink 
+            to="/parts" 
+            className={({ isActive }) => `
+              flex flex-col items-center justify-center p-3 px-4 text-secondary-white no-underline transition-all text-xs border-b-[3px] border-transparent whitespace-nowrap min-w-[80px] text-center gap-1
+              lg:flex-row lg:p-4 lg:px-6 lg:text-sm lg:border-b-0 lg:border-l-[3px] lg:min-w-0 lg:text-left lg:gap-2
+              ${isActive ? 'bg-primary-black text-primary-red border-primary-red font-semibold' : 'hover:bg-primary-black hover:text-primary-white hover:border-primary-red lg:hover:border-primary-red'}
+            `}
+          >
+            <span>🔩</span>
+            <span>Parçalar</span>
+          </NavLink>
+          <NavLink 
+            to="/customer-vehicles" 
+            className={({ isActive }) => `
+              flex flex-col items-center justify-center p-3 px-4 text-secondary-white no-underline transition-all text-xs border-b-[3px] border-transparent whitespace-nowrap min-w-[80px] text-center gap-1
+              lg:flex-row lg:p-4 lg:px-6 lg:text-sm lg:border-b-0 lg:border-l-[3px] lg:min-w-0 lg:text-left lg:gap-2
+              ${isActive ? 'bg-primary-black text-primary-red border-primary-red font-semibold' : 'hover:bg-primary-black hover:text-primary-white hover:border-primary-red lg:hover:border-primary-red'}
+            `}
+          >
+            <span>🚗</span>
+            <span>Müş. Araçları</span>
+          </NavLink>
           
           {/* Sadece admin */}
           {user?.role === 'admin' && (

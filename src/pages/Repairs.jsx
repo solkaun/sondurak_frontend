@@ -4,10 +4,12 @@ import api from '../services/api'
 const Repairs = () => {
   const [repairs, setRepairs] = useState([])
   const [parts, setParts] = useState([])
+  const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [searchPart, setSearchPart] = useState('')
+  const [selectedVehicle, setSelectedVehicle] = useState('')
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     brand: '',
@@ -25,16 +27,40 @@ const Repairs = () => {
 
   const fetchData = async () => {
     try {
-      const [repairsRes, partsRes] = await Promise.all([
+      const [repairsRes, partsRes, vehiclesRes] = await Promise.all([
         api.get('/repairs'),
-        api.get('/parts')
+        api.get('/parts'),
+        api.get('/customer-vehicles')
       ])
       setRepairs(repairsRes.data)
       setParts(partsRes.data)
+      setVehicles(vehiclesRes.data)
     } catch (error) {
       console.error('Veri yükleme hatası:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleVehicleSelect = (vehicleId) => {
+    setSelectedVehicle(vehicleId)
+    if (vehicleId) {
+      const vehicle = vehicles.find(v => v._id === vehicleId)
+      if (vehicle) {
+        setFormData({
+          ...formData,
+          brand: vehicle.brand,
+          model: vehicle.model,
+          plate: vehicle.plate
+        })
+      }
+    } else {
+      setFormData({
+        ...formData,
+        brand: '',
+        model: '',
+        plate: ''
+      })
     }
   }
 
@@ -86,6 +112,7 @@ const Repairs = () => {
   const openModal = (repair = null) => {
     if (repair) {
       setEditingId(repair._id)
+      setSelectedVehicle('')
       setFormData({
         date: repair.date.split('T')[0],
         brand: repair.brand,
@@ -101,6 +128,7 @@ const Repairs = () => {
       })
     } else {
       setEditingId(null)
+      setSelectedVehicle('')
       setFormData({
         date: new Date().toISOString().split('T')[0],
         brand: '',
@@ -117,6 +145,7 @@ const Repairs = () => {
   const closeModal = () => {
     setShowModal(false)
     setEditingId(null)
+    setSelectedVehicle('')
     setSearchPart('')
     setTempPart({ part: '', quantity: 1, price: 0 })
   }
@@ -225,24 +254,42 @@ const Repairs = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 space-y-3">
               <div>
-                <label className="block mb-2 text-secondary-white font-medium text-sm">Tarih</label>
+                <label className="block mb-1.5 text-secondary-white font-medium text-xs">Tarih</label>
                 <input
                   type="date"
-                  className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
+                  className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
                   value={formData.date}
                   onChange={e => setFormData({ ...formData, date: e.target.value })}
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-1.5 text-secondary-white font-medium text-xs">
+                  Müşteri Aracı Seç (Opsiyonel)
+                </label>
+                <select
+                  className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
+                  value={selectedVehicle}
+                  onChange={e => handleVehicleSelect(e.target.value)}
+                >
+                  <option value="">Manuel Giriş</option>
+                  {vehicles.map(vehicle => (
+                    <option key={vehicle._id} value={vehicle._id}>
+                      {vehicle.plate} - {vehicle.brand} {vehicle.model} ({vehicle.customerName})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block mb-2 text-secondary-white font-medium text-sm">Marka</label>
+                  <label className="block mb-1.5 text-secondary-white font-medium text-xs">Marka</label>
                   <input
                     type="text"
-                    className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
+                    className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
                     value={formData.brand}
                     onChange={e => setFormData({ ...formData, brand: e.target.value })}
                     required
@@ -250,10 +297,10 @@ const Repairs = () => {
                 </div>
 
                 <div>
-                  <label className="block mb-2 text-secondary-white font-medium text-sm">Model</label>
+                  <label className="block mb-1.5 text-secondary-white font-medium text-xs">Model</label>
                   <input
                     type="text"
-                    className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
+                    className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
                     value={formData.model}
                     onChange={e => setFormData({ ...formData, model: e.target.value })}
                     required
@@ -262,10 +309,10 @@ const Repairs = () => {
               </div>
 
               <div>
-                <label className="block mb-2 text-secondary-white font-medium text-sm">Plaka</label>
+                <label className="block mb-1.5 text-secondary-white font-medium text-xs">Plaka</label>
                 <input
                   type="text"
-                  className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red uppercase"
+                  className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red uppercase"
                   value={formData.plate}
                   onChange={e => setFormData({ ...formData, plate: e.target.value.toUpperCase() })}
                   required

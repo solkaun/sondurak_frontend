@@ -4,6 +4,8 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import Users from './pages/Users'
 import Suppliers from './pages/Suppliers'
+import Parts from './pages/Parts'
+import CustomerVehicles from './pages/CustomerVehicles'
 import Purchases from './pages/Purchases'
 import Repairs from './pages/Repairs'
 import Expenses from './pages/Expenses'
@@ -21,6 +23,8 @@ function App() {
           <Route index element={<Navigate to="/purchases" />} />
           {/* Admin ve User erişebilir */}
           <Route path="purchases" element={<Purchases />} />
+          <Route path="parts" element={<Parts />} />
+          <Route path="customer-vehicles" element={<CustomerVehicles />} />
           
           {/* Sadece Admin erişebilir */}
           <Route path="users" element={user?.role === 'admin' ? <Users /> : <Navigate to="/purchases" />} />
