@@ -12,6 +12,8 @@ const Purchases = () => {
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [searchPart, setSearchPart] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     supplier: '',
@@ -26,8 +28,17 @@ const Purchases = () => {
 
   const fetchData = async () => {
     try {
+      // Tarih filtresi için query params oluştur
+      let queryParams = '';
+      if (startDate || endDate) {
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        queryParams = `?${params.toString()}`;
+      }
+
       const [purchasesRes, suppliersRes, partsRes] = await Promise.all([
-        api.get('/purchases'),
+        api.get(`/purchases${queryParams}`),
         api.get('/suppliers'),
         api.get('/parts')
       ])
@@ -39,6 +50,18 @@ const Purchases = () => {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleFilterChange = () => {
+    setLoading(true)
+    fetchData()
+  }
+
+  const clearFilters = () => {
+    setStartDate('')
+    setEndDate('')
+    setLoading(true)
+    setTimeout(() => fetchData(), 100)
   }
 
   const handleSubmit = async (e) => {
@@ -115,14 +138,54 @@ const Purchases = () => {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-xl md:text-2xl font-bold text-secondary-white">Parça Satın Alımları</h1>
-        <button 
-          className="w-full sm:w-auto px-4 py-2.5 md:py-2 bg-primary-red text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
-          onClick={() => openModal()}
-        >
-          + Yeni Satın Alım
-        </button>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-xl md:text-2xl font-bold text-secondary-white">Parça Satın Alımları</h1>
+          <button 
+            className="w-full sm:w-auto px-4 py-2.5 md:py-2 bg-primary-red text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
+            onClick={() => openModal()}
+          >
+            + Yeni Satın Alım
+          </button>
+        </div>
+
+        {/* Tarih Filtresi */}
+        <div className="bg-secondary-black border border-border-color rounded-lg p-4">
+          <div className="flex flex-col sm:flex-row gap-3 items-end">
+            <div className="flex-1">
+              <label className="block mb-1.5 text-secondary-white font-medium text-xs">Başlangıç Tarihi</label>
+              <input
+                type="date"
+                className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block mb-1.5 text-secondary-white font-medium text-xs">Bitiş Tarihi</label>
+              <input
+                type="date"
+                className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button
+                className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-blue-700 active:scale-95"
+                onClick={handleFilterChange}
+              >
+                🔍 Filtrele
+              </button>
+              <button
+                className="flex-1 sm:flex-none px-4 py-2 bg-border-color text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-text-gray active:scale-95"
+                onClick={clearFilters}
+              >
+                ✖ Temizle
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="bg-secondary-black rounded-lg overflow-hidden border border-border-color">
@@ -157,12 +220,16 @@ const Purchases = () => {
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-col sm:flex-row gap-1.5">
-                      <button 
-                        className="px-2.5 py-1 bg-border-color text-primary-white rounded text-xs transition-all btn-touch hover:bg-text-gray active:scale-95"
-                        onClick={() => openModal(purchase)}
-                      >
-                        Düzenle
-                      </button>
+                      {/* User sadece kendi kayıtlarını, Admin tümünü düzenleyebilir */}
+                      {(user?.role === 'admin' || purchase.createdBy?._id === user?._id) && (
+                        <button 
+                          className="px-2.5 py-1 bg-border-color text-primary-white rounded text-xs transition-all btn-touch hover:bg-text-gray active:scale-95 disabled:opacity-50"
+                          onClick={() => openModal(purchase)}
+                          disabled={submitting}
+                        >
+                          Düzenle
+                        </button>
+                      )}
                       {user?.role === 'admin' && (
                         <button 
                           className="px-2.5 py-1 bg-primary-red text-primary-white rounded text-xs transition-all btn-touch hover:bg-primary-red-hover active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
