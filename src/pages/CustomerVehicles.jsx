@@ -8,9 +8,12 @@ const CustomerVehicles = () => {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [loadingHistory, setLoadingHistory] = useState(false)
+  const [loadingQR, setLoadingQR] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showHistoryModal, setShowHistoryModal] = useState(false)
+  const [showQRModal, setShowQRModal] = useState(false)
   const [vehicleHistory, setVehicleHistory] = useState(null)
+  const [qrData, setQrData] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [formData, setFormData] = useState({
     customerName: '',
@@ -118,6 +121,68 @@ const CustomerVehicles = () => {
     setVehicleHistory(null)
   }
 
+  const viewQRCode = async (vehicleId) => {
+    setLoadingQR(true)
+    try {
+      const response = await api.get(`/customer-vehicles/${vehicleId}/qr`)
+      setQrData(response.data)
+      setShowQRModal(true)
+    } catch (error) {
+      alert(error.response?.data?.message || 'QR kod yüklenemedi')
+    } finally {
+      setLoadingQR(false)
+    }
+  }
+
+  const closeQRModal = () => {
+    setShowQRModal(false)
+    setQrData(null)
+  }
+
+  const downloadQRCode = () => {
+    if (!qrData) return
+    
+    const link = document.createElement('a')
+    link.href = qrData.qrCodeImage
+    link.download = `QR_${qrData.vehicle.plate}.png`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const printQRCode = () => {
+    if (!qrData) return
+    
+    const printWindow = window.open('', '', 'width=600,height=600')
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>QR Kod - ${qrData.vehicle.plate}</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              text-align: center; 
+              padding: 20px;
+            }
+            h2 { color: #DC2626; margin-bottom: 10px; }
+            img { margin: 20px 0; }
+            .info { margin: 10px 0; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <h2>SON DURAK - Oto Elektrik</h2>
+          <h3>${qrData.vehicle.brand} ${qrData.vehicle.model}</h3>
+          <div class="info"><strong>Plaka:</strong> ${qrData.vehicle.plate}</div>
+          <div class="info"><strong>Müşteri:</strong> ${qrData.vehicle.customerName}</div>
+          <img src="${qrData.qrCodeImage}" alt="QR Kod" />
+          <p style="font-size: 12px; color: #666;">Araç geçmişini görüntülemek için QR kodu okutun</p>
+        </body>
+      </html>
+    `)
+    printWindow.document.close()
+    printWindow.print()
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -161,6 +226,20 @@ const CustomerVehicles = () => {
                   <td className="px-3 py-2 text-xs text-primary-white">{vehicle.year || '-'}</td>
                   <td className="px-3 py-2">
                     <div className="flex flex-col sm:flex-row gap-1.5">
+                      <button 
+                        className="px-2.5 py-1 bg-blue-600 text-primary-white rounded text-xs transition-all btn-touch hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => viewQRCode(vehicle._id)}
+                        disabled={loadingQR || submitting}
+                        title="QR Kod"
+                      >
+                        {loadingQR ? (
+                          <span className="flex items-center justify-center gap-1">
+                            <span className="inline-block w-3 h-3 border-2 border-blue-300 border-t-white rounded-full animate-spin"></span>
+                          </span>
+                        ) : (
+                          '📱'
+                        )}
+                      </button>
                       <button 
                         className="px-2.5 py-1 bg-green-600 text-primary-white rounded text-xs transition-all btn-touch hover:bg-green-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={() => viewHistory(vehicle._id)}
@@ -353,6 +432,64 @@ const CustomerVehicles = () => {
                 </div>
               )}
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* QR Kod Modal */}
+      {showQRModal && qrData && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={closeQRModal}>
+          <div className="bg-secondary-black border border-border-color rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 border-b border-border-color">
+              <h2 className="text-lg font-bold text-secondary-white">QR Kod - {qrData.vehicle.plate}</h2>
+              <button
+                className="text-3xl text-text-gray hover:text-primary-red transition-colors"
+                onClick={closeQRModal}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="p-6 text-center">
+              <div className="mb-4">
+                <p className="text-sm text-text-gray mb-1">
+                  <span className="font-semibold text-secondary-white">{qrData.vehicle.brand} {qrData.vehicle.model}</span>
+                </p>
+                <p className="text-xs text-text-gray">{qrData.vehicle.customerName}</p>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg inline-block mb-4">
+                <img 
+                  src={qrData.qrCodeImage} 
+                  alt="QR Kod" 
+                  className="w-64 h-64"
+                />
+              </div>
+
+              <p className="text-xs text-text-gray mb-4">
+                Bu QR kodu okutarak aracın tamir geçmişini görüntüleyebilirsiniz
+              </p>
+
+              <div className="flex gap-2">
+                <button
+                  className="flex-1 px-4 py-2 bg-blue-600 text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-blue-700 active:scale-95"
+                  onClick={downloadQRCode}
+                >
+                  📥 İndir
+                </button>
+                <button
+                  className="flex-1 px-4 py-2 bg-green-600 text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-green-700 active:scale-95"
+                  onClick={printQRCode}
+                >
+                  🖨️ Yazdır
+                </button>
+              </div>
+
+              <div className="mt-4 p-3 bg-primary-black rounded-md border border-border-color">
+                <p className="text-xs text-text-gray mb-1">QR Kod URL:</p>
+                <p className="text-xs text-primary-white font-mono break-all">{qrData.qrUrl}</p>
+              </div>
+            </div>
           </div>
         </div>
       )}

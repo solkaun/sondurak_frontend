@@ -10,6 +10,7 @@ import Purchases from './pages/Purchases'
 import Repairs from './pages/Repairs'
 import Expenses from './pages/Expenses'
 import Analysis from './pages/Analysis'
+import VehiclePublic from './pages/VehiclePublic'
 
 function App() {
   const { user } = useAuth()
@@ -17,6 +18,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public Route - QR Kod ile araç geçmişi (Login gerektirmez) */}
+        <Route path="/vehicle/:qrCode" element={<VehiclePublic />} />
+        
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
         
         <Route path="/" element={user ? <Layout /> : <Navigate to="/login" />}>
