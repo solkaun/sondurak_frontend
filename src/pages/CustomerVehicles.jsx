@@ -110,7 +110,6 @@ const CustomerVehicles = () => {
     try {
       const response = await api.get(`/customer-vehicles/${vehicleId}/history`)
       setVehicleHistory(response.data)
-      console.log(response.data)
       setShowHistoryModal(true)
     } catch (error) {
       alert(error.response?.data?.message || 'Geçmiş yüklenemedi')
@@ -197,7 +196,7 @@ const CustomerVehicles = () => {
     // ============ İSTATİSTİKLER ============
     yPos += 12
     doc.setFillColor(245, 245, 245)
-    doc.rect(14, yPos - 5, pageWidth - 28, 22, 'F')
+    doc.rect(14, yPos - 5, pageWidth - 28, 17, 'F')
 
     doc.setFontSize(11)
     doc.setFont(undefined, 'bold')
@@ -211,8 +210,6 @@ const CustomerVehicles = () => {
     doc.text(turkishToEnglish(`Toplam Tamir Sayisi: ${vehicleHistory.totalRepairs}`), 18, yPos)
     yPos += 5
     doc.text(turkishToEnglish(`Toplam Harcama: ${vehicleHistory.totalCost.toFixed(2)} TL`), 18, yPos)
-    yPos += 5
-    doc.text(turkishToEnglish(`Toplam Parca: ${vehicleHistory.totalParts}`), 18, yPos)
 
     // ============ TAMİR GEÇMİŞİ TABLOSU ============
     yPos += 10
