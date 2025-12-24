@@ -88,10 +88,15 @@ const Purchases = () => {
 
   const exportToPDF = () => {
     const doc = new jsPDF({
-      orientation: 'landscape', // Yatay sayfa - daha geniş tablo için
+      orientation: 'landscape',
       unit: 'mm',
-      format: 'a4'
+      format: 'a4',
+      putOnlyUsedFonts: true,
+      compress: true
     })
+    
+    // Türkçe karakter desteği için encoding ayarı
+    doc.setLanguage('tr-TR')
     
     const pageWidth = doc.internal.pageSize.getWidth()
     const pageHeight = doc.internal.pageSize.getHeight()
@@ -188,29 +193,36 @@ const Purchases = () => {
         cellPadding: 3,
         textColor: [0, 0, 0],
         lineColor: [200, 200, 200],
-        lineWidth: 0.1
+        lineWidth: 0.1,
+        fontStyle: 'normal'
       },
       headStyles: {
-        fillColor: [220, 38, 38], // Kırmızı
+        fillColor: [220, 38, 38],
         textColor: [255, 255, 255],
         fontStyle: 'bold',
         fontSize: 9,
         halign: 'center'
       },
       columnStyles: {
-        0: { halign: 'center', cellWidth: 10 }, // #
-        1: { halign: 'center', cellWidth: 25 }, // Tarih
-        2: { halign: 'left', cellWidth: 40 },   // Parçacı
-        3: { halign: 'left', cellWidth: 50 },   // Parça
-        4: { halign: 'center', cellWidth: 15 }, // Adet
-        5: { halign: 'right', cellWidth: 25 },  // Birim Fiyat
-        6: { halign: 'right', cellWidth: 25 },  // Toplam
-        7: { halign: 'left', cellWidth: 35 }    // Ekleyen
+        0: { halign: 'center', cellWidth: 10 },
+        1: { halign: 'center', cellWidth: 25 },
+        2: { halign: 'left', cellWidth: 40 },
+        3: { halign: 'left', cellWidth: 50 },
+        4: { halign: 'center', cellWidth: 15 },
+        5: { halign: 'right', cellWidth: 25 },
+        6: { halign: 'right', cellWidth: 25 },
+        7: { halign: 'left', cellWidth: 35 }
       },
       alternateRowStyles: {
-        fillColor: [250, 250, 250] // Zebra stripes
+        fillColor: [250, 250, 250]
       },
-      margin: { left: 14, right: 14 }
+      margin: { left: 14, right: 14 },
+      didParseCell: function(data) {
+        // Türkçe karakter desteği için
+        if (data.cell.raw && typeof data.cell.raw === 'string') {
+          data.cell.text = [data.cell.raw]
+        }
+      }
     })
     
     // ============ ÖZET TABLOSU ============
