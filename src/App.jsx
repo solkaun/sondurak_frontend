@@ -20,12 +20,15 @@ function App() {
         
         <Route path="/" element={user ? <Layout /> : <Navigate to="/login" />}>
           <Route index element={<Navigate to="/purchases" />} />
-          <Route path="users" element={user?.role === 'admin' ? <Users /> : <Navigate to="/" />} />
-          <Route path="suppliers" element={user?.role === 'admin' ? <Suppliers /> : <Navigate to="/" />} />
-          <Route path="purchases" element={user?.role === 'admin' ? <Purchases /> : <Navigate to="/" />} />
-          <Route path="repairs" element={user?.role === 'admin' ? <Repairs /> : <Navigate to="/" />} />
-          <Route path="expenses" element={user?.role === 'admin' ? <Expenses /> : <Navigate to="/" />} />
-          <Route path="analysis" element={user?.role === 'admin' ? <Analysis /> : <Navigate to="/" />} />
+          {/* Admin ve User erişebilir */}
+          <Route path="purchases" element={<Purchases />} />
+          
+          {/* Sadece Admin erişebilir */}
+          <Route path="users" element={user?.role === 'admin' ? <Users /> : <Navigate to="/purchases" />} />
+          <Route path="suppliers" element={user?.role === 'admin' ? <Suppliers /> : <Navigate to="/purchases" />} />
+          <Route path="repairs" element={user?.role === 'admin' ? <Repairs /> : <Navigate to="/purchases" />} />
+          <Route path="expenses" element={user?.role === 'admin' ? <Expenses /> : <Navigate to="/purchases" />} />
+          <Route path="analysis" element={user?.role === 'admin' ? <Analysis /> : <Navigate to="/purchases" />} />
         </Route>
       </Routes>
     </BrowserRouter>

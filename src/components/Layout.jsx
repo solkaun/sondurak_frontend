@@ -21,12 +21,15 @@ const Layout = () => {
         </div>
         
         <div className="nav-links">
+          {/* Tüm kullanıcılar erişebilir */}
+          <NavLink to="/purchases" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+            <span>📦</span>
+            <span>Satın Alım</span>
+          </NavLink>
+          
+          {/* Sadece admin erişebilir */}
           {user?.role === 'admin' && (
             <>
-              <NavLink to="/purchases" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                <span>📦</span>
-                <span>Satın Alım</span>
-              </NavLink>
               <NavLink to="/repairs" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 <span>🔧</span>
                 <span>Tamir</span>
