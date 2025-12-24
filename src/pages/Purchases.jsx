@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
+import jsPDF from 'jspdf'
+import 'jspdf-autotable'
 
 const Purchases = () => {
   const { user } = useAuth()
@@ -14,6 +16,14 @@ const Purchases = () => {
   const [searchPart, setSearchPart] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [selectedSupplier, setSelectedSupplier] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 50
+  })
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     supplier: '',
@@ -24,25 +34,28 @@ const Purchases = () => {
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [currentPage])
 
   const fetchData = async () => {
     try {
-      // Tarih filtresi için query params oluştur
-      let queryParams = '';
-      if (startDate || endDate) {
-        const params = new URLSearchParams();
-        if (startDate) params.append('startDate', startDate);
-        if (endDate) params.append('endDate', endDate);
-        queryParams = `?${params.toString()}`;
-      }
+      // Filtre ve pagination için query params oluştur
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      if (selectedSupplier) params.append('supplier', selectedSupplier);
+      params.append('page', currentPage);
+      params.append('limit', 50);
+
+      const queryString = params.toString();
 
       const [purchasesRes, suppliersRes, partsRes] = await Promise.all([
-        api.get(`/purchases${queryParams}`),
+        api.get(`/purchases?${queryString}`),
         api.get('/suppliers'),
         api.get('/parts')
       ])
-      setPurchases(purchasesRes.data)
+      
+      setPurchases(purchasesRes.data.purchases)
+      setPagination(purchasesRes.data.pagination)
       setSuppliers(suppliersRes.data)
       setParts(partsRes.data)
     } catch (error) {
@@ -53,15 +66,85 @@ const Purchases = () => {
   }
 
   const handleFilterChange = () => {
+    setCurrentPage(1) // Filtreleme yaparken ilk sayfaya dön
     setLoading(true)
-    fetchData()
+    setTimeout(() => fetchData(), 100)
   }
 
   const clearFilters = () => {
     setStartDate('')
     setEndDate('')
+    setSelectedSupplier('')
+    setCurrentPage(1)
     setLoading(true)
     setTimeout(() => fetchData(), 100)
+  }
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage)
+    setLoading(true)
+    setTimeout(() => fetchData(), 100)
+  }
+
+  const exportToPDF = () => {
+    const doc = new jsPDF()
+    
+    // Başlık
+    doc.setFontSize(16)
+    doc.text('SON DURAK - Parça Satın Alım Listesi', 14, 15)
+    
+    // Filtre bilgileri
+    doc.setFontSize(10)
+    let yPos = 25
+    if (startDate || endDate || selectedSupplier) {
+      doc.text('Filtreler:', 14, yPos)
+      yPos += 5
+      if (startDate) {
+        doc.text(`Başlangıç: ${new Date(startDate).toLocaleDateString('tr-TR')}`, 14, yPos)
+        yPos += 5
+      }
+      if (endDate) {
+        doc.text(`Bitiş: ${new Date(endDate).toLocaleDateString('tr-TR')}`, 14, yPos)
+        yPos += 5
+      }
+      if (selectedSupplier) {
+        const supplier = suppliers.find(s => s._id === selectedSupplier)
+        doc.text(`Parçacı: ${supplier?.shopName || ''}`, 14, yPos)
+        yPos += 5
+      }
+      yPos += 5
+    }
+    
+    // Tablo verisi
+    const tableData = purchases.map(purchase => [
+      new Date(purchase.date).toLocaleDateString('tr-TR'),
+      purchase.supplier.shopName,
+      purchase.part.name,
+      purchase.quantity,
+      `${purchase.price.toFixed(2)} ₺`,
+      `${purchase.totalCost.toFixed(2)} ₺`,
+      purchase.createdBy ? `${purchase.createdBy.firstName} ${purchase.createdBy.lastName}` : '-'
+    ])
+    
+    // Tablo
+    doc.autoTable({
+      startY: yPos,
+      head: [['Tarih', 'Parçacı', 'Parça', 'Adet', 'Fiyat', 'Toplam', 'Ekleyen']],
+      body: tableData,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [220, 38, 38] }
+    })
+    
+    // Özet
+    const totalCost = purchases.reduce((sum, p) => sum + p.totalCost, 0)
+    const finalY = doc.lastAutoTable.finalY + 10
+    doc.setFontSize(10)
+    doc.text(`Toplam Kayıt: ${pagination.totalItems}`, 14, finalY)
+    doc.text(`Toplam Tutar: ${totalCost.toFixed(2)} ₺`, 14, finalY + 5)
+    
+    // PDF'i indir
+    const fileName = `Parca_Satin_Alim_${new Date().toISOString().split('T')[0]}.pdf`
+    doc.save(fileName)
   }
 
   const handleSubmit = async (e) => {
@@ -149,28 +232,46 @@ const Purchases = () => {
           </button>
         </div>
 
-        {/* Tarih Filtresi */}
+        {/* Filtreler */}
         <div className="bg-secondary-black border border-border-color rounded-lg p-4">
-          <div className="flex flex-col sm:flex-row gap-3 items-end">
-            <div className="flex-1">
-              <label className="block mb-1.5 text-secondary-white font-medium text-xs">Başlangıç Tarihi</label>
-              <input
-                type="date"
-                className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <label className="block mb-1.5 text-secondary-white font-medium text-xs">Başlangıç Tarihi</label>
+                <input
+                  type="date"
+                  className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block mb-1.5 text-secondary-white font-medium text-xs">Bitiş Tarihi</label>
+                <input
+                  type="date"
+                  className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block mb-1.5 text-secondary-white font-medium text-xs">Parçacı</label>
+                <select
+                  className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
+                  value={selectedSupplier}
+                  onChange={(e) => setSelectedSupplier(e.target.value)}
+                >
+                  <option value="">Tümü</option>
+                  {suppliers.map(supplier => (
+                    <option key={supplier._id} value={supplier._id}>
+                      {supplier.shopName}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="flex-1">
-              <label className="block mb-1.5 text-secondary-white font-medium text-xs">Bitiş Tarihi</label>
-              <input
-                type="date"
-                className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
+            
+            <div className="flex flex-col sm:flex-row gap-2">
               <button
                 className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-blue-700 active:scale-95"
                 onClick={handleFilterChange}
@@ -182,6 +283,13 @@ const Purchases = () => {
                 onClick={clearFilters}
               >
                 ✖ Temizle
+              </button>
+              <button
+                className="flex-1 sm:flex-none px-4 py-2 bg-green-600 text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-green-700 active:scale-95"
+                onClick={exportToPDF}
+                disabled={purchases.length === 0}
+              >
+                📄 PDF İndir
               </button>
             </div>
           </div>
