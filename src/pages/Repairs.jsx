@@ -12,9 +12,12 @@ const Repairs = () => {
   const [selectedVehicle, setSelectedVehicle] = useState('')
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
+    customerVehicle: '',
     brand: '',
     model: '',
     plate: '',
+    currentKm: '',
+    currentIssues: '',
     description: '',
     parts: [],
     laborCost: 0
@@ -49,6 +52,7 @@ const Repairs = () => {
       if (vehicle) {
         setFormData({
           ...formData,
+          customerVehicle: vehicleId,
           brand: vehicle.brand,
           model: vehicle.model,
           plate: vehicle.plate
@@ -57,6 +61,7 @@ const Repairs = () => {
     } else {
       setFormData({
         ...formData,
+        customerVehicle: '',
         brand: '',
         model: '',
         plate: ''
@@ -112,12 +117,15 @@ const Repairs = () => {
   const openModal = (repair = null) => {
     if (repair) {
       setEditingId(repair._id)
-      setSelectedVehicle('')
+      setSelectedVehicle(repair.customerVehicle?._id || '')
       setFormData({
         date: repair.date.split('T')[0],
+        customerVehicle: repair.customerVehicle?._id || '',
         brand: repair.brand,
         model: repair.model,
         plate: repair.plate,
+        currentKm: repair.currentKm || '',
+        currentIssues: repair.currentIssues || '',
         description: repair.description,
         parts: repair.parts.map(p => ({
           part: p.part._id,
@@ -131,9 +139,12 @@ const Repairs = () => {
       setSelectedVehicle('')
       setFormData({
         date: new Date().toISOString().split('T')[0],
+        customerVehicle: '',
         brand: '',
         model: '',
         plate: '',
+        currentKm: '',
+        currentIssues: '',
         description: '',
         parts: [],
         laborCost: 0
@@ -319,13 +330,43 @@ const Repairs = () => {
                 />
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block mb-1.5 text-secondary-white font-medium text-xs">
+                    Mevcut KM <span className="text-text-gray">(Opsiyonel)</span>
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
+                    value={formData.currentKm}
+                    onChange={e => setFormData({ ...formData, currentKm: e.target.value })}
+                    placeholder="Örn: 125000"
+                    min="0"
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1.5 text-secondary-white font-medium text-xs">
+                    Mevcut Arızalar <span className="text-text-gray">(Opsiyonel)</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
+                    value={formData.currentIssues}
+                    onChange={e => setFormData({ ...formData, currentIssues: e.target.value })}
+                    placeholder="Örn: Motor ısınması, fren sesi"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block mb-2 text-secondary-white font-medium text-sm">Açıklama</label>
+                <label className="block mb-1.5 text-secondary-white font-medium text-xs">Yapılan İşlem Açıklaması</label>
                 <textarea
-                  className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red resize-none"
+                  className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red resize-none"
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
                   rows="3"
+                  placeholder="Yapılan tamir işleminin detaylı açıklaması..."
                   required
                 />
               </div>

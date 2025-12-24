@@ -7,6 +7,8 @@ const CustomerVehicles = () => {
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [showHistoryModal, setShowHistoryModal] = useState(false)
+  const [vehicleHistory, setVehicleHistory] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [formData, setFormData] = useState({
     customerName: '',
@@ -90,6 +92,21 @@ const CustomerVehicles = () => {
     setEditingId(null)
   }
 
+  const viewHistory = async (vehicleId) => {
+    try {
+      const response = await api.get(`/customer-vehicles/${vehicleId}/history`)
+      setVehicleHistory(response.data)
+      setShowHistoryModal(true)
+    } catch (error) {
+      alert(error.response?.data?.message || 'Geçmiş yüklenemedi')
+    }
+  }
+
+  const closeHistoryModal = () => {
+    setShowHistoryModal(false)
+    setVehicleHistory(null)
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -133,6 +150,12 @@ const CustomerVehicles = () => {
                   <td className="px-3 py-2 text-xs text-primary-white">{vehicle.year || '-'}</td>
                   <td className="px-3 py-2">
                     <div className="flex flex-col sm:flex-row gap-1.5">
+                      <button 
+                        className="px-2.5 py-1 bg-green-600 text-primary-white rounded text-xs transition-all btn-touch hover:bg-green-700 active:scale-95"
+                        onClick={() => viewHistory(vehicle._id)}
+                      >
+                        Geçmiş
+                      </button>
                       <button 
                         className="px-2.5 py-1 bg-border-color text-primary-white rounded text-xs transition-all btn-touch hover:bg-text-gray active:scale-95"
                         onClick={() => openModal(vehicle)}
@@ -301,6 +324,116 @@ const CustomerVehicles = () => {
                 </div>
               )}
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Araç Geçmişi Modal */}
+      {showHistoryModal && vehicleHistory && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={closeHistoryModal}>
+          <div className="bg-secondary-black border border-border-color rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 border-b border-border-color sticky top-0 bg-secondary-black z-10">
+              <div>
+                <h2 className="text-lg font-bold text-secondary-white">
+                  Araç Geçmişi: {vehicleHistory.vehicle.plate}
+                </h2>
+                <p className="text-xs text-text-gray mt-1">
+                  {vehicleHistory.vehicle.brand} {vehicleHistory.vehicle.model} - {vehicleHistory.vehicle.customerName}
+                </p>
+              </div>
+              <button 
+                className="text-3xl text-text-gray hover:text-primary-red transition-colors"
+                onClick={closeHistoryModal}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="p-4">
+              {/* Özet Kartları */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <div className="bg-primary-black p-4 rounded-lg border border-border-color">
+                  <div className="text-text-gray text-xs mb-1">Toplam Tamir</div>
+                  <div className="text-xl font-bold text-primary-white">{vehicleHistory.totalRepairs}</div>
+                </div>
+                <div className="bg-primary-black p-4 rounded-lg border border-border-color">
+                  <div className="text-text-gray text-xs mb-1">Toplam Harcama</div>
+                  <div className="text-xl font-bold text-primary-red">{vehicleHistory.totalCost.toFixed(2)} ₺</div>
+                </div>
+              </div>
+
+              {/* Tamir Geçmişi */}
+              <h3 className="text-sm font-semibold text-secondary-white mb-3">Tamir Kayıtları</h3>
+              
+              {vehicleHistory.repairs.length === 0 ? (
+                <div className="text-center text-text-gray text-xs py-8">
+                  Bu araç için henüz tamir kaydı yok
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {vehicleHistory.repairs.map(repair => (
+                    <div key={repair._id} className="bg-primary-black p-4 rounded-lg border border-border-color">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <div className="text-xs text-text-gray">
+                            {new Date(repair.date).toLocaleDateString('tr-TR')}
+                          </div>
+                          {repair.currentKm && (
+                            <div className="text-xs text-text-gray">
+                              KM: {repair.currentKm.toLocaleString()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-sm font-bold text-primary-red">
+                          {repair.totalCost.toFixed(2)} ₺
+                        </div>
+                      </div>
+
+                      {repair.currentIssues && (
+                        <div className="mb-2">
+                          <div className="text-xs text-text-gray">Arızalar:</div>
+                          <div className="text-xs text-primary-white">{repair.currentIssues}</div>
+                        </div>
+                      )}
+
+                      <div className="mb-2">
+                        <div className="text-xs text-text-gray">Yapılan İşlem:</div>
+                        <div className="text-xs text-primary-white">{repair.description}</div>
+                      </div>
+
+                      {repair.parts && repair.parts.length > 0 && (
+                        <div className="mb-2">
+                          <div className="text-xs text-text-gray mb-1">Kullanılan Parçalar:</div>
+                          <div className="space-y-1">
+                            {repair.parts.map((p, idx) => (
+                              <div key={idx} className="flex justify-between text-xs text-primary-white bg-secondary-black p-2 rounded">
+                                <span>{p.part.name} x{p.quantity}</span>
+                                <span className="text-primary-red">{(p.quantity * p.price).toFixed(2)} ₺</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between text-xs pt-2 border-t border-border-color">
+                        <span className="text-text-gray">İşçilik: {repair.laborCost.toFixed(2)} ₺</span>
+                        <span className="text-text-gray">Parça: {repair.partsCost.toFixed(2)} ₺</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-4 mt-4 border-t border-border-color">
+                <button 
+                  type="button" 
+                  className="flex-1 px-4 py-2 bg-border-color text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-text-gray active:scale-95"
+                  onClick={closeHistoryModal}
+                >
+                  Kapat
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
