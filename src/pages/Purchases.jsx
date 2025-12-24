@@ -109,9 +109,9 @@ const Purchases = () => {
   return (
     <div className="p-4 md:p-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-secondary-white">Parça Satın Alımları</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-secondary-white">Parça Satın Alımları</h1>
         <button 
-          className="w-full sm:w-auto px-4 py-3 md:py-2.5 bg-primary-red text-primary-white rounded-md font-medium transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
+          className="w-full sm:w-auto px-4 py-2.5 md:py-2 bg-primary-red text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
           onClick={() => openModal()}
         >
           + Yeni Satın Alım
@@ -123,42 +123,42 @@ const Purchases = () => {
           <table className="w-full">
             <thead>
               <tr className="bg-primary-black border-b border-border-color">
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Tarih</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Parçacı</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Parça Adı</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Adet</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Birim Fiyat</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Toplam</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">Ekleyen</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-white">İşlemler</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Tarih</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Parçacı</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Parça Adı</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Adet</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Birim Fiyat</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Toplam</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">Ekleyen</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-secondary-white">İşlemler</th>
               </tr>
             </thead>
             <tbody>
               {purchases.map(purchase => (
                 <tr key={purchase._id} className="border-b border-border-color hover:bg-primary-black/50 transition-colors">
-                  <td className="px-4 py-3 text-sm text-primary-white">{new Date(purchase.date).toLocaleDateString('tr-TR')}</td>
-                  <td className="px-4 py-3 text-sm text-primary-white">{purchase.supplier.shopName}</td>
-                  <td className="px-4 py-3 text-sm text-primary-white">{purchase.part.name}</td>
-                  <td className="px-4 py-3 text-sm text-primary-white">{purchase.quantity}</td>
-                  <td className="px-4 py-3 text-sm text-primary-white">{purchase.price.toFixed(2)} ₺</td>
-                  <td className="px-4 py-3 text-sm text-primary-red font-semibold">{purchase.totalCost.toFixed(2)} ₺</td>
-                  <td className="px-4 py-3 text-sm text-primary-white">
+                  <td className="px-3 py-2 text-xs text-primary-white">{new Date(purchase.date).toLocaleDateString('tr-TR')}</td>
+                  <td className="px-3 py-2 text-xs text-primary-white">{purchase.supplier.shopName}</td>
+                  <td className="px-3 py-2 text-xs text-primary-white">{purchase.part.name}</td>
+                  <td className="px-3 py-2 text-xs text-primary-white">{purchase.quantity}</td>
+                  <td className="px-3 py-2 text-xs text-primary-white">{purchase.price.toFixed(2)} ₺</td>
+                  <td className="px-3 py-2 text-xs text-primary-red font-semibold">{purchase.totalCost.toFixed(2)} ₺</td>
+                  <td className="px-3 py-2 text-xs text-primary-white">
                     {purchase.createdBy ? 
                       `${purchase.createdBy.firstName} ${purchase.createdBy.lastName}` : 
                       '-'
                     }
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-col sm:flex-row gap-2">
+                  <td className="px-3 py-2">
+                    <div className="flex flex-col sm:flex-row gap-1.5">
                       <button 
-                        className="px-3 py-1.5 bg-border-color text-primary-white rounded-md text-sm transition-all btn-touch hover:bg-text-gray active:scale-95"
+                        className="px-2.5 py-1 bg-border-color text-primary-white rounded text-xs transition-all btn-touch hover:bg-text-gray active:scale-95"
                         onClick={() => openModal(purchase)}
                       >
                         Düzenle
                       </button>
                       {user?.role === 'admin' && (
                         <button 
-                          className="px-3 py-1.5 bg-primary-red text-primary-white rounded-md text-sm transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
+                          className="px-2.5 py-1 bg-primary-red text-primary-white rounded text-xs transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
                           onClick={() => handleDelete(purchase._id)}
                         >
                           Sil
@@ -170,7 +170,7 @@ const Purchases = () => {
               ))}
               {purchases.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="px-4 py-8 text-center text-text-gray">
+                  <td colSpan="8" className="px-3 py-6 text-center text-text-gray text-xs">
                     Henüz kayıt yok
                   </td>
                 </tr>
@@ -183,8 +183,8 @@ const Purchases = () => {
       {showModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={closeModal}>
           <div className="bg-secondary-black border border-border-color rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center p-6 border-b border-border-color sticky top-0 bg-secondary-black z-10">
-              <h2 className="text-xl font-bold text-secondary-white">
+            <div className="flex justify-between items-center p-4 border-b border-border-color sticky top-0 bg-secondary-black z-10">
+              <h2 className="text-lg font-bold text-secondary-white">
                 {editingId ? 'Satın Alım Düzenle' : 'Yeni Satın Alım'}
               </h2>
               <button 
@@ -195,12 +195,12 @@ const Purchases = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 space-y-3">
               <div>
-                <label className="block mb-2 text-secondary-white font-medium text-sm">Tarih</label>
+                <label className="block mb-1.5 text-secondary-white font-medium text-xs">Tarih</label>
                 <input
                   type="date"
-                  className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
+                  className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
                   value={formData.date}
                   onChange={e => setFormData({ ...formData, date: e.target.value })}
                   required
@@ -208,9 +208,9 @@ const Purchases = () => {
               </div>
 
               <div>
-                <label className="block mb-2 text-secondary-white font-medium text-sm">Parçacı</label>
+                <label className="block mb-1.5 text-secondary-white font-medium text-xs">Parçacı</label>
                 <select
-                  className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
+                  className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
                   value={formData.supplier}
                   onChange={e => setFormData({ ...formData, supplier: e.target.value })}
                   required
@@ -225,10 +225,10 @@ const Purchases = () => {
               </div>
 
               <div className="relative">
-                <label className="block mb-2 text-secondary-white font-medium text-sm">Parça Adı</label>
+                <label className="block mb-1.5 text-secondary-white font-medium text-xs">Parça Adı</label>
                 <input
                   type="text"
-                  className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
+                  className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
                   value={formData.partName}
                   onChange={e => {
                     setFormData({ ...formData, partName: e.target.value })
@@ -242,7 +242,7 @@ const Purchases = () => {
                     {filteredParts.slice(0, 5).map(part => (
                       <div
                         key={part._id}
-                        className="px-4 py-2 text-primary-white hover:bg-secondary-black cursor-pointer transition-colors"
+                        className="px-3 py-2 text-primary-white text-sm hover:bg-secondary-black cursor-pointer transition-colors"
                         onClick={() => {
                           setFormData({ ...formData, partName: part.name })
                           setSearchPart('')
@@ -256,10 +256,10 @@ const Purchases = () => {
               </div>
 
               <div>
-                <label className="block mb-2 text-secondary-white font-medium text-sm">Adet</label>
+                <label className="block mb-1.5 text-secondary-white font-medium text-xs">Adet</label>
                 <input
                   type="number"
-                  className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
+                  className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
                   value={formData.quantity}
                   onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) })}
                   min="1"
@@ -268,10 +268,10 @@ const Purchases = () => {
               </div>
 
               <div>
-                <label className="block mb-2 text-secondary-white font-medium text-sm">Birim Fiyat (₺)</label>
+                <label className="block mb-1.5 text-secondary-white font-medium text-xs">Birim Fiyat (₺)</label>
                 <input
                   type="number"
-                  className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-white focus:outline-none focus:border-primary-red"
+                  className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
                   value={formData.price}
                   onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })}
                   min="0"
@@ -281,25 +281,25 @@ const Purchases = () => {
               </div>
 
               <div>
-                <label className="block mb-2 text-secondary-white font-medium text-sm">Toplam</label>
+                <label className="block mb-1.5 text-secondary-white font-medium text-xs">Toplam</label>
                 <input
                   type="text"
-                  className="w-full p-3 bg-primary-black border border-border-color rounded-md text-primary-red font-semibold opacity-75 cursor-not-allowed"
+                  className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-red text-sm font-semibold opacity-75 cursor-not-allowed"
                   value={`${(formData.quantity * formData.price).toFixed(2)} ₺`}
                   disabled
                 />
               </div>
 
-              <div className="flex gap-2 pt-4">
+              <div className="flex gap-2 pt-2">
                 <button 
                   type="submit" 
-                  className="flex-1 px-4 py-3 bg-primary-red text-primary-white rounded-md font-medium transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
+                  className="flex-1 px-4 py-2 bg-primary-red text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
                 >
                   {editingId ? 'Güncelle' : 'Kaydet'}
                 </button>
                 <button 
                   type="button" 
-                  className="flex-1 px-4 py-3 bg-border-color text-primary-white rounded-md font-medium transition-all btn-touch hover:bg-text-gray active:scale-95"
+                  className="flex-1 px-4 py-2 bg-border-color text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-text-gray active:scale-95"
                   onClick={closeModal}
                 >
                   İptal

@@ -35,8 +35,8 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-black to-secondary-black p-4">
       <div className="bg-secondary-black border border-border-color rounded-2xl p-6 w-full max-w-md shadow-[0_10px_40px_rgba(0,0,0,0.5)] md:p-10 md:rounded-xl">
         <div className="text-center mb-6 md:mb-8">
-          <h1 className="text-3xl font-extrabold text-primary-red mb-2 tracking-[2px] md:text-4xl md:tracking-[3px]">SON DURAK</h1>
-          <p className="text-text-gray text-sm md:text-base">Oto Elektrik Takip Sistemi</p>
+          <h1 className="text-2xl font-extrabold text-primary-red mb-2 tracking-[2px] md:text-3xl md:tracking-[3px]">SON DURAK</h1>
+          <p className="text-text-gray text-xs md:text-sm">Oto Elektrik Takip Sistemi</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -47,11 +47,11 @@ const Login = () => {
           )}
 
           <div>
-            <label className="block mb-2 text-secondary-white font-medium text-sm">Email</label>
+            <label className="block mb-2 text-secondary-white font-medium text-xs">Email</label>
             <input
               type="email"
               name="email"
-              className="w-full p-3 md:p-3 bg-secondary-black border border-border-color rounded-md text-primary-white text-base focus:outline-none focus:border-primary-red placeholder:text-text-gray"
+              className="w-full p-2.5 md:p-2.5 bg-secondary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red placeholder:text-text-gray"
               value={formData.email}
               onChange={handleChange}
               required
@@ -60,11 +60,11 @@ const Login = () => {
           </div>
 
           <div>
-            <label className="block mb-2 text-secondary-white font-medium text-sm">Şifre</label>
+            <label className="block mb-2 text-secondary-white font-medium text-xs">Şifre</label>
             <input
               type="password"
               name="password"
-              className="w-full p-3 md:p-3 bg-secondary-black border border-border-color rounded-md text-primary-white text-base focus:outline-none focus:border-primary-red placeholder:text-text-gray"
+              className="w-full p-2.5 md:p-2.5 bg-secondary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red placeholder:text-text-gray"
               value={formData.password}
               onChange={handleChange}
               required
@@ -74,7 +74,7 @@ const Login = () => {
 
           <button 
             type="submit" 
-            className="w-full flex items-center justify-center gap-2 p-3 md:p-3 bg-primary-red text-primary-white rounded-md cursor-pointer text-base font-medium transition-all btn-touch hover:bg-primary-red-hover hover:-translate-y-0.5 active:bg-primary-red-hover active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 p-2.5 md:p-2.5 bg-primary-red text-primary-white rounded-md cursor-pointer text-sm font-medium transition-all btn-touch hover:bg-primary-red-hover hover:-translate-y-0.5 active:bg-primary-red-hover active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? (

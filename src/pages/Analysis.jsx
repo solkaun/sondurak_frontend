@@ -57,7 +57,7 @@ const Analysis = () => {
   return (
     <div className="p-4 md:p-8">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-secondary-white mb-4">Analiz Raporu</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-secondary-white mb-4">Analiz Raporu</h1>
         
         <div className="bg-secondary-black p-4 md:p-6 rounded-lg border border-border-color">
           <h3 className="text-lg font-semibold text-secondary-white mb-4">Tarih Filtresi</h3>
