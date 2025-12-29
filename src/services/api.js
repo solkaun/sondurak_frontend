@@ -1,7 +1,9 @@
 import axios from 'axios'
 
+let isDevelopment = false;
+
 const api = axios.create({
-  baseURL: 'https://sondurak-backend.vercel.app/api',
+  baseURL: isDevelopment ? 'http://localhost:5000/api' : 'https://sondurak-backend.vercel.app/api',
   headers: {
     'Content-Type': 'application/json'
   }

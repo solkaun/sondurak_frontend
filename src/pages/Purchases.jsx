@@ -182,7 +182,7 @@ const Purchases = () => {
       (index + 1).toString(),
       new Date(purchase.date).toLocaleDateString('tr-TR'),
       turkishToEnglish(purchase.supplier.shopName || '-'),
-      turkishToEnglish(purchase.part.name || '-'),
+      turkishToEnglish(purchase.part?.name || '-'),
       purchase.quantity.toString(),
       turkishToEnglish(`${purchase.price.toFixed(2)} TL`),
       turkishToEnglish(`${purchase.totalCost.toFixed(2)} TL`),
@@ -330,7 +330,7 @@ const Purchases = () => {
       setFormData({
         date: purchase.date.split('T')[0],
         supplier: purchase.supplier._id,
-        partName: purchase.part.name,
+        partName: purchase.part?.name,
         quantity: purchase.quantity,
         price: purchase.price
       })
@@ -462,7 +462,7 @@ const Purchases = () => {
                 <tr key={purchase._id} className="border-b border-border-color hover:bg-primary-black/50 transition-colors">
                   <td className="px-3 py-2 text-xs text-primary-white">{new Date(purchase.date).toLocaleDateString('tr-TR')}</td>
                   <td className="px-3 py-2 text-xs text-primary-white">{purchase.supplier.shopName}</td>
-                  <td className="px-3 py-2 text-xs text-primary-white">{purchase.part.name}</td>
+                  <td className="px-3 py-2 text-xs text-primary-white">{purchase.part?.name}</td>
                   <td className="px-3 py-2 text-xs text-primary-white">{purchase.quantity}</td>
                   <td className="px-3 py-2 text-xs text-primary-white">{purchase.price.toFixed(2)} ₺</td>
                   <td className="px-3 py-2 text-xs text-primary-red font-semibold">{purchase.totalCost.toFixed(2)} ₺</td>
