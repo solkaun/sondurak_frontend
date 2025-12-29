@@ -1,12 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
 
 const Users = () => {
+  const isFirstRender = useRef(true)
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 8
+  })
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -19,18 +28,54 @@ const Users = () => {
   })
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      return
+    }
+    if (currentPage !== 1) {
+      setCurrentPage(1)
+    } else {
+      const timer = setTimeout(() => {
+        setLoading(true)
+        fetchUsers()
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [searchQuery])
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+    }
+    setLoading(true)
     fetchUsers()
-  }, [])
+  }, [currentPage])
 
   const fetchUsers = async () => {
     try {
-      const response = await api.get('/users')
-      setUsers(response.data)
+      const params = new URLSearchParams();
+      if (searchQuery) params.append('search', searchQuery);
+      params.append('page', currentPage);
+      params.append('limit', 8);
+
+      const queryString = params.toString();
+      const response = await api.get(`/users?${queryString}`)
+      setUsers(response.data.users)
+      setPagination(response.data.pagination)
     } catch (error) {
       console.error('Veri yükleme hatası:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const clearSearch = () => {
+    setSearchQuery('')
+    setCurrentPage(1)
+  }
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleSubmit = async (e) => {
@@ -108,14 +153,42 @@ const Users = () => {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-xl md:text-2xl font-bold text-secondary-white">Kullanıcılar</h1>
-        <button 
-          className="w-full sm:w-auto px-4 py-2.5 md:py-2 bg-primary-red text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
-          onClick={() => openModal()}
-        >
-          + Yeni Kullanıcı
-        </button>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-xl md:text-2xl font-bold text-secondary-white">Kullanıcılar</h1>
+          <button 
+            className="w-full sm:w-auto px-4 py-2.5 md:py-2 bg-primary-red text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
+            onClick={() => openModal()}
+          >
+            + Yeni Kullanıcı
+          </button>
+        </div>
+
+        {/* Arama */}
+        <div className="bg-secondary-black border border-border-color rounded-lg p-4">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex-1">
+              <label className="block mb-1.5 text-secondary-white font-medium text-xs">🔍 Ara</label>
+              <input
+                type="text"
+                className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Ad, soyad, email veya telefon ara..."
+              />
+            </div>
+            {searchQuery && (
+              <div className="flex items-end">
+                <button
+                  className="w-full sm:w-auto px-4 py-2 bg-border-color text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-text-gray active:scale-95"
+                  onClick={clearSearch}
+                >
+                  ✖ Temizle
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="bg-secondary-black rounded-lg overflow-hidden border border-border-color">
@@ -166,7 +239,7 @@ const Users = () => {
               {users.length === 0 && (
                 <tr>
                   <td colSpan="6" className="px-4 py-8 text-center text-text-gray">
-                    Henüz kayıt yok
+                    {searchQuery ? 'Arama sonucu bulunamadı' : 'Henüz kayıt yok'}
                   </td>
                 </tr>
               )}
@@ -174,6 +247,85 @@ const Users = () => {
           </table>
         </div>
       </div>
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-secondary-black border border-border-color rounded-lg p-4">
+          <div className="text-sm text-secondary-white">
+            Toplam <span className="font-semibold text-primary-red">{pagination.totalItems}</span> kayıt
+            <span className="ml-2 text-text-gray">
+              (Sayfa {pagination.currentPage}/{pagination.totalPages})
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              className="px-3 py-1.5 bg-border-color text-primary-white rounded text-xs font-medium transition-all btn-touch hover:bg-text-gray active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+            >
+              « İlk
+            </button>
+            <button
+              className="px-3 py-1.5 bg-border-color text-primary-white rounded text-xs font-medium transition-all btn-touch hover:bg-text-gray active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              ‹ Önceki
+            </button>
+            
+            <div className="flex items-center gap-1">
+              {[...Array(pagination.totalPages)].map((_, index) => {
+                const pageNum = index + 1
+                if (
+                  pageNum === 1 ||
+                  pageNum === pagination.totalPages ||
+                  (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                ) {
+                  return (
+                    <button
+                      key={pageNum}
+                      className={`px-3 py-1.5 rounded text-xs font-medium transition-all btn-touch ${
+                        currentPage === pageNum
+                          ? 'bg-primary-red text-primary-white'
+                          : 'bg-border-color text-primary-white hover:bg-text-gray active:scale-95'
+                      }`}
+                      onClick={() => handlePageChange(pageNum)}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                } else if (
+                  pageNum === currentPage - 2 ||
+                  pageNum === currentPage + 2
+                ) {
+                  return (
+                    <span key={pageNum} className="text-text-gray px-1">
+                      ...
+                    </span>
+                  )
+                }
+                return null
+              })}
+            </div>
+
+            <button
+              className="px-3 py-1.5 bg-border-color text-primary-white rounded text-xs font-medium transition-all btn-touch hover:bg-text-gray active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === pagination.totalPages}
+            >
+              Sonraki ›
+            </button>
+            <button
+              className="px-3 py-1.5 bg-border-color text-primary-white rounded text-xs font-medium transition-all btn-touch hover:bg-text-gray active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(pagination.totalPages)}
+              disabled={currentPage === pagination.totalPages}
+            >
+              Son »
+            </button>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={closeModal}>

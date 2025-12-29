@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import { jsPDF } from 'jspdf'
@@ -6,6 +6,7 @@ import autoTable from 'jspdf-autotable'
 
 const CustomerVehicles = () => {
   const { user } = useAuth()
+  const isFirstRender = useRef(true)
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -17,6 +18,14 @@ const CustomerVehicles = () => {
   const [vehicleHistory, setVehicleHistory] = useState(null)
   const [qrData, setQrData] = useState(null)
   const [editingId, setEditingId] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 8
+  })
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -28,18 +37,59 @@ const CustomerVehicles = () => {
   })
 
   useEffect(() => {
+    // İlk render'da atla
+    if (isFirstRender.current) {
+      return
+    }
+    
+    // Filtreler değiştiğinde ilk sayfaya dön
+    if (currentPage !== 1) {
+      setCurrentPage(1)
+    } else {
+      // Zaten 1. sayfadaysa direkt veri çek (debounce ile)
+      const timer = setTimeout(() => {
+        setLoading(true)
+        fetchVehicles()
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [searchQuery])
+
+  useEffect(() => {
+    // Sayfa değiştiğinde veri çek
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+    }
+    setLoading(true)
     fetchVehicles()
-  }, [])
+  }, [currentPage])
 
   const fetchVehicles = async () => {
     try {
-      const response = await api.get('/customer-vehicles')
-      setVehicles(response.data)
+      const params = new URLSearchParams();
+      if (searchQuery) params.append('search', searchQuery);
+      params.append('page', currentPage);
+      params.append('limit', 8);
+
+      const queryString = params.toString();
+      const response = await api.get(`/customer-vehicles?${queryString}`)
+      setVehicles(response.data.vehicles)
+      setPagination(response.data.pagination)
     } catch (error) {
       console.error('Veri yükleme hatası:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const clearSearch = () => {
+    setSearchQuery('')
+    setCurrentPage(1)
+  }
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleSubmit = async (e) => {
@@ -195,8 +245,13 @@ const CustomerVehicles = () => {
 
     // ============ İSTATİSTİKLER ============
     yPos += 12
+    
+    // En son yağ bakımı bilgisini bul
+    const lastOilChange = vehicleHistory.repairs.find(r => r.isOilChange && r.nextOilChangeKm);
+    const summaryHeight = lastOilChange ? 22 : 17;
+    
     doc.setFillColor(245, 245, 245)
-    doc.rect(14, yPos - 5, pageWidth - 28, 17, 'F')
+    doc.rect(14, yPos - 5, pageWidth - 28, summaryHeight, 'F')
 
     doc.setFontSize(11)
     doc.setFont(undefined, 'bold')
@@ -210,6 +265,13 @@ const CustomerVehicles = () => {
     doc.text(turkishToEnglish(`Toplam Tamir Sayisi: ${vehicleHistory.totalRepairs}`), 18, yPos)
     yPos += 5
     doc.text(turkishToEnglish(`Toplam Harcama: ${vehicleHistory.totalCost.toFixed(2)} TL`), 18, yPos)
+    
+    if (lastOilChange) {
+      yPos += 5
+      doc.setTextColor(200, 150, 0)
+      doc.setFont(undefined, 'bold')
+      doc.text(turkishToEnglish(`Gelecek Yag Bakimi: ${lastOilChange.nextOilChangeKm} KM`), 18, yPos)
+    }
 
     // ============ TAMİR GEÇMİŞİ TABLOSU ============
     yPos += 10
@@ -226,11 +288,19 @@ const CustomerVehicles = () => {
           turkishToEnglish(`${p.part.name} (${p.quantity}x)`)
         ).join(', ') || '-'
 
+        let description = turkishToEnglish(repair.description);
+        if (repair.isOilChange) {
+          description = '🛢️ YAG BAKIMI - ' + description;
+          if (repair.nextOilChangeKm) {
+            description += ` (Gelecek: ${repair.nextOilChangeKm} KM)`;
+          }
+        }
+
         return [
           (index + 1).toString(),
           new Date(repair.date).toLocaleDateString('tr-TR'),
           repair.currentKm ? repair.currentKm.toString() : '-',
-          turkishToEnglish(repair.description),
+          description,
           partsStr,
           turkishToEnglish(`${repair.laborCost.toFixed(2)} TL`),
           turkishToEnglish(`${repair.partsCost.toFixed(2)} TL`),
@@ -406,14 +476,42 @@ const CustomerVehicles = () => {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-xl md:text-2xl font-bold text-secondary-white">Müşteri Araçları</h1>
-        <button 
-          className="w-full sm:w-auto px-4 py-2.5 md:py-2 bg-primary-red text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
-          onClick={() => openModal()}
-        >
-          + Yeni Araç
-        </button>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-xl md:text-2xl font-bold text-secondary-white">Müşteri Araçları</h1>
+          <button 
+            className="w-full sm:w-auto px-4 py-2.5 md:py-2 bg-primary-red text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-primary-red-hover active:scale-95"
+            onClick={() => openModal()}
+          >
+            + Yeni Araç
+          </button>
+        </div>
+
+        {/* Arama */}
+        <div className="bg-secondary-black border border-border-color rounded-lg p-4">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex-1">
+              <label className="block mb-1.5 text-secondary-white font-medium text-xs">🔍 Ara</label>
+              <input
+                type="text"
+                className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Müşteri adı, plaka, marka veya model ara..."
+              />
+            </div>
+            {searchQuery && (
+              <div className="flex items-end">
+                <button
+                  className="w-full sm:w-auto px-4 py-2 bg-border-color text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-text-gray active:scale-95"
+                  onClick={clearSearch}
+                >
+                  ✖ Temizle
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="bg-secondary-black rounded-lg overflow-hidden border border-border-color">
@@ -489,7 +587,7 @@ const CustomerVehicles = () => {
               {vehicles.length === 0 && (
                 <tr>
                   <td colSpan="6" className="px-3 py-6 text-center text-text-gray text-xs">
-                    Henüz kayıt yok
+                    {searchQuery ? 'Arama sonucu bulunamadı' : 'Henüz kayıt yok'}
                   </td>
                 </tr>
               )}
@@ -497,6 +595,85 @@ const CustomerVehicles = () => {
           </table>
         </div>
       </div>
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-secondary-black border border-border-color rounded-lg p-4">
+          <div className="text-sm text-secondary-white">
+            Toplam <span className="font-semibold text-primary-red">{pagination.totalItems}</span> kayıt
+            <span className="ml-2 text-text-gray">
+              (Sayfa {pagination.currentPage}/{pagination.totalPages})
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              className="px-3 py-1.5 bg-border-color text-primary-white rounded text-xs font-medium transition-all btn-touch hover:bg-text-gray active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+            >
+              « İlk
+            </button>
+            <button
+              className="px-3 py-1.5 bg-border-color text-primary-white rounded text-xs font-medium transition-all btn-touch hover:bg-text-gray active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              ‹ Önceki
+            </button>
+            
+            <div className="flex items-center gap-1">
+              {[...Array(pagination.totalPages)].map((_, index) => {
+                const pageNum = index + 1
+                if (
+                  pageNum === 1 ||
+                  pageNum === pagination.totalPages ||
+                  (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                ) {
+                  return (
+                    <button
+                      key={pageNum}
+                      className={`px-3 py-1.5 rounded text-xs font-medium transition-all btn-touch ${
+                        currentPage === pageNum
+                          ? 'bg-primary-red text-primary-white'
+                          : 'bg-border-color text-primary-white hover:bg-text-gray active:scale-95'
+                      }`}
+                      onClick={() => handlePageChange(pageNum)}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                } else if (
+                  pageNum === currentPage - 2 ||
+                  pageNum === currentPage + 2
+                ) {
+                  return (
+                    <span key={pageNum} className="text-text-gray px-1">
+                      ...
+                    </span>
+                  )
+                }
+                return null
+              })}
+            </div>
+
+            <button
+              className="px-3 py-1.5 bg-border-color text-primary-white rounded text-xs font-medium transition-all btn-touch hover:bg-text-gray active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === pagination.totalPages}
+            >
+              Sonraki ›
+            </button>
+            <button
+              className="px-3 py-1.5 bg-border-color text-primary-white rounded text-xs font-medium transition-all btn-touch hover:bg-text-gray active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(pagination.totalPages)}
+              disabled={currentPage === pagination.totalPages}
+            >
+              Son »
+            </button>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={closeModal}>
@@ -738,7 +915,7 @@ const CustomerVehicles = () => {
 
             <div className="p-4">
               {/* Özet Kartları */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
                 <div className="bg-primary-black p-4 rounded-lg border border-border-color">
                   <div className="text-text-gray text-xs mb-1">Toplam Tamir</div>
                   <div className="text-xl font-bold text-primary-white">{vehicleHistory.totalRepairs}</div>
@@ -747,6 +924,19 @@ const CustomerVehicles = () => {
                   <div className="text-text-gray text-xs mb-1">Toplam Harcama</div>
                   <div className="text-xl font-bold text-primary-red">{vehicleHistory.totalCost.toFixed(2)} ₺</div>
                 </div>
+                {(() => {
+                  // En son yağ bakımı yapılan tamir kaydını bul
+                  const lastOilChange = vehicleHistory.repairs.find(r => r.isOilChange && r.nextOilChangeKm);
+                  if (lastOilChange) {
+                    return (
+                      <div className="bg-primary-black p-4 rounded-lg border border-yellow-600">
+                        <div className="text-text-gray text-xs mb-1">🛢️ Gelecek Yağ Bakımı</div>
+                        <div className="text-xl font-bold text-yellow-500">{lastOilChange.nextOilChangeKm.toLocaleString()} KM</div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               {/* Tamir Geçmişi */}
@@ -759,15 +949,27 @@ const CustomerVehicles = () => {
               ) : (
                 <div className="space-y-3">
                   {vehicleHistory.repairs.map(repair => (
-                    <div key={repair._id} className="bg-primary-black p-4 rounded-lg border border-border-color">
+                    <div key={repair._id} className={`bg-primary-black p-4 rounded-lg border ${repair.isOilChange ? 'border-yellow-600' : 'border-border-color'}`}>
                       <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <div className="text-xs text-text-gray">
-                            {new Date(repair.date).toLocaleDateString('tr-TR')}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="text-xs text-text-gray">
+                              {new Date(repair.date).toLocaleDateString('tr-TR')}
+                            </div>
+                            {repair.isOilChange && (
+                              <span className="px-2 py-0.5 bg-yellow-600 text-primary-white rounded text-xs font-semibold">
+                                🛢️ Yağ Bakımı
+                              </span>
+                            )}
                           </div>
                           {repair.currentKm && (
                             <div className="text-xs text-text-gray">
                               KM: {repair.currentKm.toLocaleString()}
+                            </div>
+                          )}
+                          {repair.isOilChange && repair.nextOilChangeKm && (
+                            <div className="text-xs text-yellow-500 font-semibold">
+                              Gelecek Yağ Bakımı: {repair.nextOilChangeKm.toLocaleString()} KM
                             </div>
                           )}
                         </div>

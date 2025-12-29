@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import { jsPDF } from 'jspdf'
@@ -6,6 +6,7 @@ import autoTable from 'jspdf-autotable'
 
 const Purchases = () => {
   const { user } = useAuth()
+  const isFirstRender = useRef(true)
   const [purchases, setPurchases] = useState([])
   const [suppliers, setSuppliers] = useState([])
   const [parts, setParts] = useState([])
@@ -14,6 +15,7 @@ const Purchases = () => {
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [searchPart, setSearchPart] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [selectedSupplier, setSelectedSupplier] = useState('')
@@ -22,7 +24,7 @@ const Purchases = () => {
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
-    itemsPerPage: 50
+    itemsPerPage: 8
   })
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -33,6 +35,30 @@ const Purchases = () => {
   })
 
   useEffect(() => {
+    // İlk render'da atla
+    if (isFirstRender.current) {
+      return
+    }
+    
+    // Filtreler değiştiğinde ilk sayfaya dön
+    if (currentPage !== 1) {
+      setCurrentPage(1)
+    } else {
+      // Zaten 1. sayfadaysa direkt veri çek (debounce ile)
+      const timer = setTimeout(() => {
+        setLoading(true)
+        fetchData()
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [searchQuery, startDate, endDate, selectedSupplier])
+
+  useEffect(() => {
+    // Sayfa değiştiğinde veri çek
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+    }
+    setLoading(true)
     fetchData()
   }, [currentPage])
 
@@ -40,11 +66,12 @@ const Purchases = () => {
     try {
       // Filtre ve pagination için query params oluştur
       const params = new URLSearchParams();
+      if (searchQuery) params.append('search', searchQuery);
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       if (selectedSupplier) params.append('supplier', selectedSupplier);
       params.append('page', currentPage);
-      params.append('limit', 50);
+      params.append('limit', 8);
 
       const queryString = params.toString();
 
@@ -53,11 +80,11 @@ const Purchases = () => {
         api.get('/suppliers'),
         api.get('/parts')
       ])
-      
+
       setPurchases(purchasesRes.data.purchases)
       setPagination(purchasesRes.data.pagination)
-      setSuppliers(suppliersRes.data)
-      setParts(partsRes.data)
+      setSuppliers(suppliersRes.data.suppliers)
+      setParts(partsRes.data.parts)
     } catch (error) {
       console.error('Veri yükleme hatası:', error)
     } finally {
@@ -65,25 +92,17 @@ const Purchases = () => {
     }
   }
 
-  const handleFilterChange = () => {
-    setCurrentPage(1) // Filtreleme yaparken ilk sayfaya dön
-    setLoading(true)
-    setTimeout(() => fetchData(), 100)
-  }
-
   const clearFilters = () => {
     setStartDate('')
     setEndDate('')
     setSelectedSupplier('')
+    setSearchQuery('')
     setCurrentPage(1)
-    setLoading(true)
-    setTimeout(() => fetchData(), 100)
   }
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage)
-    setLoading(true)
-    setTimeout(() => fetchData(), 100)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const turkishToEnglish = (text) => {
@@ -145,7 +164,7 @@ const Purchases = () => {
     yPos += 6
     
     // ============ FİLTRELER ============
-    if (startDate || endDate || selectedSupplier) {
+    if (startDate || endDate || selectedSupplier || searchQuery) {
       doc.setFillColor(245, 245, 245) // Açık gri arka plan
       doc.rect(14, yPos - 4, pageWidth - 28, 18, 'F')
       
@@ -160,6 +179,9 @@ const Purchases = () => {
       yPos += 6
       
       let filterText = []
+      if (searchQuery) {
+        filterText.push(turkishToEnglish(`Arama: ${searchQuery}`))
+      }
       if (startDate) {
         filterText.push(turkishToEnglish(`Baslangic: ${new Date(startDate).toLocaleDateString('tr-TR')}`))
       }
@@ -353,9 +375,9 @@ const Purchases = () => {
     setSearchPart('')
   }
 
-  const filteredParts = parts.filter(part =>
-    part.name.toLowerCase().includes(searchPart.toLowerCase())
-  )
+  const filteredParts = parts.length > 0 ? parts?.filter(part =>
+    part?.name?.toLowerCase().includes(searchPart.toLowerCase())
+  ) : []
 
   if (loading) {
     return (
@@ -381,6 +403,18 @@ const Purchases = () => {
         {/* Filtreler */}
         <div className="bg-secondary-black border border-border-color rounded-lg p-4">
           <div className="flex flex-col gap-3">
+            {/* Arama */}
+            <div>
+              <label className="block mb-1.5 text-secondary-white font-medium text-xs">🔍 Ara</label>
+              <input
+                type="text"
+                className="w-full p-2 bg-primary-black border border-border-color rounded-md text-primary-white text-sm focus:outline-none focus:border-primary-red"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Parça adı, parçacı veya ekleyen kişi ara..."
+              />
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1">
                 <label className="block mb-1.5 text-secondary-white font-medium text-xs">Başlangıç Tarihi</label>
@@ -408,30 +442,24 @@ const Purchases = () => {
                   onChange={(e) => setSelectedSupplier(e.target.value)}
                 >
                   <option value="">Tümü</option>
-                  {suppliers.map(supplier => (
+                  {suppliers.length > 0 ? suppliers.map(supplier => (
                     <option key={supplier._id} value={supplier._id}>
                       {supplier.shopName}
                     </option>
-                  ))}
+                  )) : <option value="">Parçacı bulunamadı</option>}
                 </select>
               </div>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-2">
               <button
-                className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-blue-700 active:scale-95"
-                onClick={handleFilterChange}
-              >
-                🔍 Filtrele
-              </button>
-              <button
                 className="flex-1 sm:flex-none px-4 py-2 bg-border-color text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-text-gray active:scale-95"
                 onClick={clearFilters}
               >
-                ✖ Temizle
+                ✖ Filtreleri Temizle
               </button>
               <button
-                className="flex-1 sm:flex-none px-4 py-2 bg-green-600 text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-green-700 active:scale-95"
+                className="flex-1 sm:flex-none px-4 py-2 bg-green-600 text-primary-white rounded-md text-sm font-medium transition-all btn-touch hover:bg-green-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={exportToPDF}
                 disabled={purchases.length === 0}
               >
@@ -500,7 +528,7 @@ const Purchases = () => {
               {purchases.length === 0 && (
                 <tr>
                   <td colSpan="8" className="px-3 py-6 text-center text-text-gray text-xs">
-                    Henüz kayıt yok
+                    {searchQuery ? 'Arama sonucu bulunamadı' : 'Henüz kayıt yok'}
                   </td>
                 </tr>
               )}
@@ -508,6 +536,86 @@ const Purchases = () => {
           </table>
         </div>
       </div>
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-secondary-black border border-border-color rounded-lg p-4">
+          <div className="text-sm text-secondary-white">
+            Toplam <span className="font-semibold text-primary-red">{pagination.totalItems}</span> kayıt
+            <span className="ml-2 text-text-gray">
+              (Sayfa {pagination.currentPage}/{pagination.totalPages})
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              className="px-3 py-1.5 bg-border-color text-primary-white rounded text-xs font-medium transition-all btn-touch hover:bg-text-gray active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+            >
+              « İlk
+            </button>
+            <button
+              className="px-3 py-1.5 bg-border-color text-primary-white rounded text-xs font-medium transition-all btn-touch hover:bg-text-gray active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              ‹ Önceki
+            </button>
+            
+            <div className="flex items-center gap-1">
+              {[...Array(pagination.totalPages)].map((_, index) => {
+                const pageNum = index + 1
+                // Sadece mevcut sayfa civarındaki sayfa numaralarını göster
+                if (
+                  pageNum === 1 ||
+                  pageNum === pagination.totalPages ||
+                  (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                ) {
+                  return (
+                    <button
+                      key={pageNum}
+                      className={`px-3 py-1.5 rounded text-xs font-medium transition-all btn-touch ${
+                        currentPage === pageNum
+                          ? 'bg-primary-red text-primary-white'
+                          : 'bg-border-color text-primary-white hover:bg-text-gray active:scale-95'
+                      }`}
+                      onClick={() => handlePageChange(pageNum)}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                } else if (
+                  pageNum === currentPage - 2 ||
+                  pageNum === currentPage + 2
+                ) {
+                  return (
+                    <span key={pageNum} className="text-text-gray px-1">
+                      ...
+                    </span>
+                  )
+                }
+                return null
+              })}
+            </div>
+
+            <button
+              className="px-3 py-1.5 bg-border-color text-primary-white rounded text-xs font-medium transition-all btn-touch hover:bg-text-gray active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === pagination.totalPages}
+            >
+              Sonraki ›
+            </button>
+            <button
+              className="px-3 py-1.5 bg-border-color text-primary-white rounded text-xs font-medium transition-all btn-touch hover:bg-text-gray active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(pagination.totalPages)}
+              disabled={currentPage === pagination.totalPages}
+            >
+              Son »
+            </button>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={closeModal}>
@@ -573,11 +681,11 @@ const Purchases = () => {
                         key={part._id}
                         className="px-3 py-2 text-primary-white text-sm hover:bg-secondary-black cursor-pointer transition-colors"
                         onClick={() => {
-                          setFormData({ ...formData, partName: part.name })
+                          setFormData({ ...formData, partName: part?.name })
                           setSearchPart('')
                         }}
                       >
-                        {part.name}
+                        {part?.name}
                       </div>
                     ))}
                   </div>

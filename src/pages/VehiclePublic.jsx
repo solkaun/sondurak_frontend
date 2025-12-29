@@ -43,7 +43,7 @@ const VehiclePublic = () => {
     )
   }
 
-  const { vehicle, statistics, nextOilChange, repairs } = data
+  const { vehicle, statistics, repairs } = data
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-black to-secondary-black p-4">
@@ -103,48 +103,51 @@ const VehiclePublic = () => {
           </div>
         </div>
 
-        {/* Gelecek Yağ Bakımı */}
-        {nextOilChange && (
-          <div className={`bg-secondary-black border-2 ${nextOilChange.isOverdue ? 'border-primary-red' : 'border-green-600'} rounded-xl p-6 mb-4`}>
-            <h3 className="text-lg font-bold text-secondary-white mb-4 flex items-center gap-2">
-              🛢️ Yağ Bakımı Durumu
-            </h3>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-              <div className="bg-primary-black p-3 rounded-md">
-                <p className="text-xs text-text-gray mb-1">Son Bakım KM</p>
-                <p className="text-lg font-bold text-primary-white">{nextOilChange.lastChangeKm.toLocaleString()}</p>
-              </div>
-              <div className="bg-primary-black p-3 rounded-md">
-                <p className="text-xs text-text-gray mb-1">Mevcut KM</p>
-                <p className="text-lg font-bold text-primary-white">{nextOilChange.currentKm.toLocaleString()}</p>
-              </div>
-              <div className="bg-primary-black p-3 rounded-md">
-                <p className="text-xs text-text-gray mb-1">Bakım Aralığı</p>
-                <p className="text-lg font-bold text-primary-white">{nextOilChange.intervalKm.toLocaleString()} km</p>
-              </div>
-              <div className="bg-primary-black p-3 rounded-md">
-                <p className="text-xs text-text-gray mb-1">Kalan KM</p>
-                <p className={`text-lg font-bold ${nextOilChange.isOverdue ? 'text-primary-red' : 'text-green-500'}`}>
-                  {nextOilChange.remainingKm.toLocaleString()} km
-                </p>
-              </div>
-            </div>
+        {/* Gelecek Yağ Bakımı (Manuel Girilen) */}
+        {(() => {
+          const lastOilChangeRepair = repairs.find(r => r.isOilChange && r.nextOilChangeKm);
+          if (lastOilChangeRepair && lastOilChangeRepair.nextOilChangeKm) {
+            const currentKm = repairs[0]?.currentKm || 0;
+            const remainingKm = lastOilChangeRepair.nextOilChangeKm - currentKm;
+            const isOverdue = remainingKm <= 0;
 
-            <div className={`p-4 rounded-lg ${nextOilChange.isOverdue ? 'bg-primary-red/20 border border-primary-red' : 'bg-green-600/20 border border-green-600'}`}>
-              <p className={`text-sm font-semibold ${nextOilChange.isOverdue ? 'text-primary-red' : 'text-green-500'}`}>
-                {nextOilChange.isOverdue ? (
-                  <>⚠️ Yağ bakımı süresi geçmiş! En kısa sürede bakım yaptırın.</>
-                ) : (
-                  <>✅ Sonraki yağ bakımı: {nextOilChange.estimatedNextKm.toLocaleString()} km'de</>
-                )}
-              </p>
-              <p className="text-xs text-text-gray mt-1">
-                Son bakım tarihi: {new Date(nextOilChange.lastChangeDate).toLocaleDateString('tr-TR')}
-              </p>
-            </div>
-          </div>
-        )}
+            return (
+              <div className={`bg-secondary-black border-2 ${isOverdue ? 'border-primary-red' : 'border-yellow-600'} rounded-xl p-6 mb-4`}>
+                <h3 className="text-lg font-bold text-secondary-white mb-4 flex items-center gap-2">
+                  🛢️ Gelecek Yağ Bakımı
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-primary-black p-3 rounded-md">
+                    <p className="text-xs text-text-gray mb-1">Gelecek Bakım KM</p>
+                    <p className="text-lg font-bold text-yellow-500">{lastOilChangeRepair.nextOilChangeKm.toLocaleString()} km</p>
+                  </div>
+                  <div className="bg-primary-black p-3 rounded-md">
+                    <p className="text-xs text-text-gray mb-1">Kalan KM</p>
+                    <p className={`text-lg font-bold ${isOverdue ? 'text-primary-red' : 'text-green-500'}`}>
+                      {isOverdue ? 'GEÇMİŞ!' : `${remainingKm.toLocaleString()} km`}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`p-4 rounded-lg ${isOverdue ? 'bg-primary-red/20 border border-primary-red' : 'bg-yellow-600/20 border border-yellow-600'}`}>
+                  <p className={`text-sm font-semibold ${isOverdue ? 'text-primary-red' : 'text-yellow-500'}`}>
+                    {isOverdue ? (
+                      <>⚠️ Yağ bakımı süresi geçmiş! En kısa sürede bakım yaptırın.</>
+                    ) : (
+                      <>✅ Sonraki yağ bakımı: {lastOilChangeRepair.nextOilChangeKm.toLocaleString()} km'de</>
+                    )}
+                  </p>
+                  <p className="text-xs text-text-gray mt-1">
+                    Son bakım tarihi: {new Date(lastOilChangeRepair.date).toLocaleDateString('tr-TR')} ({lastOilChangeRepair.currentKm?.toLocaleString() || '-'} KM)
+                  </p>
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })()}
+
 
         {/* Tamir Geçmişi */}
         <div className="bg-secondary-black border border-border-color rounded-xl p-6">
@@ -159,18 +162,28 @@ const VehiclePublic = () => {
           ) : (
             <div className="space-y-4">
               {repairs.map((repair, index) => (
-                <div key={repair._id} className="bg-primary-black p-4 rounded-lg border border-border-color">
+                <div key={repair._id} className={`bg-primary-black p-4 rounded-lg border ${repair.isOilChange ? 'border-yellow-600' : 'border-border-color'}`}>
                   <div className="flex justify-between items-start mb-3">
-                    <div>
+                    <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-bold text-primary-red">#{repairs.length - index}</span>
                         <span className="text-xs text-text-gray">
                           {new Date(repair.date).toLocaleDateString('tr-TR')}
                         </span>
+                        {repair.isOilChange && (
+                          <span className="px-2 py-0.5 bg-yellow-600 text-primary-white rounded text-xs font-semibold">
+                            🛢️ Yağ Bakımı
+                          </span>
+                        )}
                       </div>
                       {repair.currentKm && (
                         <p className="text-xs text-text-gray">
                           📍 KM: <span className="text-secondary-white font-semibold">{repair.currentKm.toLocaleString()}</span>
+                        </p>
+                      )}
+                      {repair.isOilChange && repair.nextOilChangeKm && (
+                        <p className="text-xs text-yellow-500 font-semibold">
+                          Gelecek Yağ Bakımı: {repair.nextOilChangeKm.toLocaleString()} KM
                         </p>
                       )}
                     </div>
